@@ -5,7 +5,7 @@ public class Predator : MonoBehaviour {
 	//public Transform m_Prey;
 	public float hp 		= 100f;			//Salud de la entidad
 	public int np 			= 10;			//Nutricion aportada a quien se alimente de la entidad
-	public int speed 		= 2;			//Velocidad de la entidad
+	public int speed 		= 8;			//Velocidad de la entidad
 	public int comRange		= 10;			//Rango de comunicacion
 	public double stamina	= 100f;			//Resistencia (nesesaria para correr etc....)
 	public float lifetime	= 10000f;		//Tiempo de vida
