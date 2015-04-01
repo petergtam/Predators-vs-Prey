@@ -8,7 +8,7 @@ public class Prey : MonoBehaviour
     public int speed; 			//Velocidad de la entidad
     public int comRange;			//Rango de comunicacion
     public double stamina;			//Resistencia (nesesaria para correr etc....)
-    public float lifetime;		//Tiempo de vida //TODO: El tiempo de vida nunca se decrementa por lo tanto nunca mueren
+    public float lifetime;		//Tiempo de vida en segundos 
     public float attack;			//Daño que realiza la entidad
     public float flesh;             //Nutricion aportada a quien se alimente de la entidad 
     public float defense;              //Defensa de la entidad.
@@ -34,9 +34,11 @@ public class Prey : MonoBehaviour
         //Propiedades variables
         flesh = Random.Range(300, 700);
         speed = Random.Range(6, 10);
-        lifetime = Random.Range(35000, 37000);
+        lifetime = Random.Range(540, 720); //De 9 a 12 minutos
         attack = Random.Range(6, 12);
         defense = Random.Range(0, 5);
+
+        state = (int)States.ChoosingLeader;
     }
 
     // Use this for initialization
@@ -44,7 +46,6 @@ public class Prey : MonoBehaviour
     {
         //Inicializar rangos
         initValue();
-        state = (int)States.ChoosingLeader;
 
         //Fija los parametros iniciales en torno a la escala
         comRange = (int)(comRange * ((float)transform.localScale.x / 0.3));
@@ -631,6 +632,11 @@ public class Prey : MonoBehaviour
      */
     private bool metabolism()
     {
+        if (lifetime > 0)
+        {
+            lifetime -= Time.deltaTime;
+        }
+
         float factor = 1f;
         if (isNeededRun)
             factor *= 2f;
@@ -652,7 +658,7 @@ public class Prey : MonoBehaviour
                 this.hp -= Time.deltaTime * factor * (1 / 15f); // Cada 15 segundos gasta uno de hp si no tiene stamina
             }
         }
-        if (this.hp <= 0)
+        if (this.hp <= 0 || lifetime < 0)
         {
             die();
             return false;
