@@ -3,15 +3,18 @@ using System.Collections;
 
 public class Plant : MonoBehaviour {
 
-	public float hp = 0f;
-	public float flesh = 1f;
+	public float hp;
+	public float flesh;
 	private float regenRange;
 	private int maxFruit;
 
 	void Start(){
-		//Fija velicidad de cresimiento y la cantidad maxima de alimento que puede tener
-		regenRange = Random.Range (0.025f, 0.06f);
-		maxFruit = 200;
+        hp = 0f;
+	    flesh = 1f;
+		
+        //Fija velicidad de cresimiento y la cantidad maxima de alimento que puede tener
+		regenRange = Random.Range (5, 50f);
+		maxFruit = Random.Range(150, 200);
 
 		//Si el arbol no nace tocando el suelo, revisa si hay algo debajo de el y se pone en ese lugar
 		RaycastHit hit;
@@ -33,14 +36,13 @@ public class Plant : MonoBehaviour {
 			Destroy( gameObject );
 
 		//Si no esta en el maximo, creece
-		if (this.flesh <= maxFruit) 
-			this.flesh += regenRange;
+		if (this.flesh <= maxFruit)
+            this.flesh += (1 / regenRange) * Time.deltaTime; //TODO: Cambiar a funcion logistica
 
 	}
 
 	IEnumerator treeGrow(){
 		while (true) {
-
 			//Cambia el tamaño del arbol, de acuerdo a la cantidad de alimento que tiene
 			float size = flesh / maxFruit;
 			gameObject.transform.localScale = new Vector3 (size, size, size);

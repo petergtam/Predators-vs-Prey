@@ -1,6 +1,5 @@
 ﻿
 
-// TODO:
 // By default, screenshot files are placed next to the executable bundle -- we don't want this in a
 // shipping game, as it will fail if the user doesn't have write access to the Applications folder.
 // Instead we should place the screenshots on the user's desktop. However, the ~/ notation doesn't

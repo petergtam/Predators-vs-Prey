@@ -26,8 +26,8 @@ public class PathNode : MonoBehaviour {
 		}
  
 		//inicializa que tan rapido nacen los arboles y cuantos puede haber en cada PATHNODE
-		fertility = Random.Range (0, 20);
-		maxTrees = Random.Range (3, 15);
+		fertility = Random.Range (30, 60);
+		maxTrees = Random.Range (2, 15);
 
 
 		//Inicializa el objeto que despliega el texto
@@ -58,7 +58,7 @@ public class PathNode : MonoBehaviour {
 		transform.LookAt( 2 * transform.position - Camera.main.transform.position );
 
 		//Aleatoriamente decide si planta o no un arbol
-		if (Random.Range (0f, 4000f) < fertility) {
+		if (Random.Range (0f, 4000f) < fertility) { //TODO: Cambiar la probabilidad
 			if ( getNumberOfTrees() < maxTrees ) {
 				plantTree();
 			}
