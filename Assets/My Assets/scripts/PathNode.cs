@@ -100,7 +100,7 @@ public class PathNode : MonoBehaviour {
 				plants += hitColliders[i].GetComponent<Plant>().flesh;
 			}
 		}
-		return (int)plants/10;
+	    return (int) plants / 10;
 	}
 
 	public int getNumberOfTrees(){

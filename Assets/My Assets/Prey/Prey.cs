@@ -1,29 +1,9 @@
 ﻿using UnityEngine;
-using System.Collections;
+using Assets.My_Assets;
 
-public class Prey : MonoBehaviour
+public class Prey : Agent
 {
-    //public Transform m_Prey;
-    public float hp;			//Salud de la entidad
-    public int speed; 			//Velocidad de la entidad
-    public int comRange;			//Rango de comunicacion
-    public double stamina;			//Resistencia (nesesaria para correr etc....)
-    public float lifetime;		//Tiempo de vida en segundos 
-    public float attack;			//Daño que realiza la entidad
-    public float flesh;             //Nutricion aportada a quien se alimente de la entidad 
-    public float defense;              //Defensa de la entidad.
-    public int state;
-
-    private bool isNeededRun = false;
-    private NavMeshAgent nav;
-    private GameObject leader;
-    public GameObject actualFood;
-    private float stoppingDistance;
-
-    //Enum Para los estados del seguidor
-    enum States { ChoosingLeader, Searching, Following, Moving, Hunting, Eating, Reproduce, Hiding, Waiting, Reagruping, Die };
-
-    private void initValue()
+    protected override void InitValue()
     {
         //Propiedades fijas
         hp = 100f;
@@ -44,18 +24,17 @@ public class Prey : MonoBehaviour
     // Use this for initialization
     void Start()
     {
-        //Inicializar rangos
-        initValue();
-
+        InitValue();
+        this.GetHungry();
         //Fija los parametros iniciales en torno a la escala
         comRange = (int)(comRange * ((float)transform.localScale.x / 0.3));
         this.stoppingDistance = travelStopDistance();
 
         //Inicializa el NavMeshAgent
         nav = GetComponent<NavMeshAgent>();
-        nav.speed = (float)((speed / 3.0) * (stamina / 100.0));
+        nav.speed = (float)((speed / 3.0) * ((stamina < 50 ? 50 : stamina) / 100.0));
         if (isNeededRun)
-            nav.speed = (float)(speed * (stamina / 100.0));
+            nav.speed = (float)(speed * ((stamina < 50 ? 50 : stamina) / 100.0));
 
         //Si no cuenta con eleccion de lider, el es el lider
         if (GetComponent<PreyLeaderChoosing>() == null)
@@ -75,12 +54,12 @@ public class Prey : MonoBehaviour
 
         if (isNeededRun)
         {
-            nav.speed = (float)(speed * (stamina / 100.0));
+            nav.speed = (float)(speed * ((stamina < 50 ? 50 : stamina) / 100.0));
             if (state != (int)States.Hiding)
                 isNeededRun = false;
         }
         else
-            nav.speed = (float)((speed / 3.0) * (stamina / 100.0));
+            nav.speed = (float)((speed / 3.0) * ((stamina < 50 ? 50 : stamina) / 100.0));
 
         if (state == (int)States.Hiding)
         {
@@ -119,28 +98,24 @@ public class Prey : MonoBehaviour
             //LEADER BEHAVIOR 
             if (isMyLeader(gameObject))
             {
-
                 //senseForSomething();
                 if (state == (int)States.Searching)
                 {			//Entra en estado para buscar comida
                     ////Debug.Log("Buscando por lugar con comida");
                     behavior_leader_searching();
                     //Debug.Log("LEader searching");
-
                 }
                 else if (state == (int)States.Following)
                 {	//Entra en estado de viaje en grupo
                     ////Debug.Log("Viajando lugar con comida");
                     behavior_leader_following();
                     //Debug.Log("LEader Follow");
-
                 }
                 else if (state == (int)States.Hunting)
                 {
                     ////Debug.Log("Cazando comida");
                     behavior_leader_Hunting();
                     //Debug.Log("LEader Hunting");
-
                 }
                 else if (state == (int)States.Eating)
                 {
@@ -148,9 +123,6 @@ public class Prey : MonoBehaviour
                     behavior_leader_Eating();
                     //Debug.Log("LEader eating");
                 }
-
-
-
                 //FOLLOWER BEHAVIOR 
             }
             else
@@ -626,47 +598,6 @@ public class Prey : MonoBehaviour
         nav.destination = transform.position;
     }
 
-
-    /**
-     *	Funciones Biologicas de consumir energia
-     */
-    private bool metabolism()
-    {
-        if (lifetime > 0)
-        {
-            lifetime -= Time.deltaTime;
-        }
-
-        float factor = 1f;
-        if (isNeededRun)
-            factor *= 2f;
-
-        if (state == (int)States.Die)
-        {
-            if (this.flesh <= 0)
-                Destroy(gameObject);
-            return false;
-        }
-        if (0 < this.stamina)
-        {
-            this.stamina -= Time.deltaTime * factor * (1 / 10f); //Cada 10 segundo gasta uno de stamina
-        }
-        if (stamina <= 0)
-        {
-            if (0 < this.hp)
-            {
-                this.hp -= Time.deltaTime * factor * (1 / 15f); // Cada 15 segundos gasta uno de hp si no tiene stamina
-            }
-        }
-        if (this.hp <= 0 || lifetime < 0)
-        {
-            die();
-            return false;
-        }
-        return true;
-    }
-
-
     //Mueve las estadisticas del enemigo y del agente
     void eatEnemy()
     {
@@ -677,7 +608,7 @@ public class Prey : MonoBehaviour
             this.hp += (this.attack / Time.deltaTime) / 10; //Time.deltaTime Es el tiempo desde el ultimo frame
     }
 
-    private void die()
+    protected override void die()
     {
         state = (int)States.Die;
         this.GetComponent<DinasorsAnimationCorrector>().die();
@@ -687,7 +618,6 @@ public class Prey : MonoBehaviour
             LeaderSaysUnsetLeader(gameObject);
             Destroy(gameObject.transform.Find("leaderLigth").gameObject);
         }
-
     }
 
 
@@ -710,9 +640,6 @@ public class Prey : MonoBehaviour
     {
         actualFood.GetComponent<Plant>().hp -= this.attack / (1f / Time.deltaTime);
     }
-
-
-
 
     /**
      **Recive un arreglo de GameObject y regresa el mas cercano a la posicion actual

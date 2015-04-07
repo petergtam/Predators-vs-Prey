@@ -1,28 +1,9 @@
 ﻿using UnityEngine;
-using System.Collections;
+using Assets.My_Assets;
 
-public class Predator : MonoBehaviour
+public class Predator : Agent
 {
-    //public Transform m_Prey;
-    public float hp;			//Salud de la entidad
-    public int speed;			//Velocidad de la entidad
-    public int comRange;			//Rango de comunicacion
-    public double stamina;			//Resistencia (nesesaria para correr etc....)
-    public float lifetime;		    //Tiempo de vida en segundos
-    public float attack;			//Daño que realiza la entidad
-    public float flesh;         //Nutricion aportada a quien se alimente de la entidad 
-    public int state;
-
-    private bool isNeededRun = false;
-    private NavMeshAgent nav;
-    private GameObject leader;
-    public GameObject actualFood;
-    private float stoppingDistance;
-
-    //Enum Para los estados del seguidor
-    enum States { ChoosingLeader, Searching, Following, Moving, Hunting, Eating, Reproduce, Waiting, Reagruping, Die };
-
-    private void initValue()
+    protected override void InitValue()
     {
         //Propiedades fijas
         hp = 100f;
@@ -42,8 +23,7 @@ public class Predator : MonoBehaviour
     // Use this for initialization
     void Start()
     {
-        //Inicializar rangos
-        initValue();
+        InitValue(); 
 
         //Fija los parametros iniciales en torno a la escala
         comRange = (int)(comRange * ((float)transform.localScale.x / 0.3));
@@ -52,9 +32,9 @@ public class Predator : MonoBehaviour
         //Inicializa el NavMeshAgent
         nav = GetComponent<NavMeshAgent>();
 
-        nav.speed = (float)((speed / 3.0) * (stamina / 100.0));
+        nav.speed = (float)((speed / 3.0) * ((stamina < 50 ? 50 : stamina) / 100.0));
         if (isNeededRun)
-            nav.speed = (float)(speed * (stamina / 100.0));
+            nav.speed = (float)(speed * ((stamina < 50 ? 50 : stamina) / 100.0));
 
         //Si no cuenta con eleccion de lider, el es el lider
         if (GetComponent<PredatorLeaderChoosing>() == null)
@@ -74,10 +54,10 @@ public class Predator : MonoBehaviour
 
         if (isNeededRun)
         {//TODO: Nunca cambia entre correr y caminar las presas
-            nav.speed = (float)(speed * (stamina / 100.0));
+            nav.speed = (float)(speed * ( (stamina < 50 ? 50: stamina)  / 100.0));
         }
         else
-            nav.speed = (float)((speed / 3.0) * (stamina / 100.0));
+            nav.speed = (float)((speed / 3.0) * ((stamina < 50 ? 50 : stamina) / 100.0));
 
         if (leader == null && state != (int)States.ChoosingLeader)
         {
@@ -252,12 +232,6 @@ public class Predator : MonoBehaviour
             this.GetComponent<DinasorsAnimationCorrector>().idle();
         }
     }
-
-
-
-
-
-
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////// Comportamiento del Seguidor ////////////////////////////////////////////////////////////////////////////////
@@ -561,48 +535,7 @@ public class Predator : MonoBehaviour
     {
         nav.destination = transform.position;
     }
-
-
-    /**
-     *	Funciones Biologicas de consumir energia
-     */
-    private bool metabolism()
-    {
-        if (lifetime > 0)
-        {
-            lifetime -= Time.deltaTime;
-        } 
-
-        float factor = 1f;
-        if (isNeededRun)
-            factor *= 2f;
-
-        if (state == (int)States.Die)
-        {
-            if (this.flesh <= 0)
-                Destroy(gameObject);
-            return false;
-        }
-        if (0 < this.stamina)
-        {
-            this.stamina -= Time.deltaTime * factor * (1 / 10f); //Cada 10 segundo gasta uno de stamina
-        }
-        if (stamina <= 0)
-        {
-            if (0 < this.hp)
-            {
-                this.hp -= Time.deltaTime * factor * (1 / 15f); // Cada 15 segundos gasta uno de hp si no tiene stamina
-            }
-        }
-        if (this.hp <= 0 || lifetime < 0)
-        {
-            die();
-            return false;
-        }
-        return true;
-    }
-
-
+    
     //Mueve las estadisticas del enemigo y del agente
     void eatEnemy()
     {
@@ -613,7 +546,7 @@ public class Predator : MonoBehaviour
             this.hp += (this.attack * Time.deltaTime) / 10;
     }
 
-    private void die()
+    protected override void die()
     {
         state = (int)States.Die;
         this.GetComponent<DinasorsAnimationCorrector>().die();

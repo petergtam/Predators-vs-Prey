@@ -13,7 +13,7 @@ public class Plant : MonoBehaviour {
 	    flesh = 1f;
 		
         //Fija velicidad de cresimiento y la cantidad maxima de alimento que puede tener
-		regenRange = Random.Range (5, 50f);
+		regenRange = Random.Range (5, 20f);
 		maxFruit = Random.Range(150, 200);
 
 		//Si el arbol no nace tocando el suelo, revisa si hay algo debajo de el y se pone en ese lugar
@@ -37,7 +37,7 @@ public class Plant : MonoBehaviour {
 
 		//Si no esta en el maximo, creece
 		if (this.flesh <= maxFruit)
-            this.flesh += (1 / regenRange) * Time.deltaTime; //TODO: Cambiar a funcion logistica
+            this.flesh += regenRange * Time.deltaTime; //TODO: Cambiar a funcion logistica
 
 	}
 
