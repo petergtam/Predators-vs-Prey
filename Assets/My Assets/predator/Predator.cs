@@ -14,7 +14,7 @@ public class Predator : Agent
         //Propiedades variables
         flesh = Random.Range(100, 300);
         speed = Random.Range(6, 10);
-        lifetime = Random.Range(540, 720);
+        maxLifeTime = Random.Range(540, 720);
         attack = Random.Range(6, 16);
 
         state = (int)States.ChoosingLeader;
@@ -49,7 +49,7 @@ public class Predator : Agent
     // Update is called once per frame	
     void Update()
     {
-        if (!metabolism())
+        if (!Metabolism())
             return;
 
         if (isNeededRun)
@@ -179,7 +179,6 @@ public class Predator : Agent
         }
     }
 
-
     void behavior_leader_Hunting()
     {
         if (actualFood == null)
@@ -208,7 +207,6 @@ public class Predator : Agent
             }
         }
     }
-
 
     void behavior_leader_Eating()
     {
@@ -269,7 +267,6 @@ public class Predator : Agent
         }
     }
 
-
     void behavior_follower_Hunting()
     {
         if (actualFood == null)
@@ -328,12 +325,7 @@ public class Predator : Agent
         }
     }
 
-
-
-
-
-
-
+    
     ///////////////////////////////////////////////////////////////
     ///////////////// Ordenes del lider ///////////////////////////
     ///////////////////////////////////////////////////////////////
@@ -352,14 +344,10 @@ public class Predator : Agent
         BroadCast("LeaderSaysReagrupate", l);
     }
 
-
     void order_hunt(GameObject l)
     {
         BroadCast("LeaderSaysHunt", l);
     }
-
-
-
 
     ///////////////////////////////////////////////////////////////
     ///////////////// Reacciones a ordenes del lider //////////////
@@ -378,7 +366,6 @@ public class Predator : Agent
             }
         }
     }
-
 
     void LeaderSaysStop(GameObject l)
     {
@@ -447,8 +434,6 @@ public class Predator : Agent
         }
     }
 
-
-
     /*
      * getLeadershipStat
      * Retorna la capacidad de liderazgo de la unidad
@@ -472,7 +457,6 @@ public class Predator : Agent
         state = (int)States.Searching;
     }
 
-
     //Retorna si el gameobject enviado es igual a la entidad actual
     bool isMe(GameObject g)
     {
@@ -489,9 +473,7 @@ public class Predator : Agent
         return false;
     }
 
-
-
-
+    
     /**
      *	Regresa la distancia desde la pocion actual a el destino deseado
      */
@@ -516,7 +498,6 @@ public class Predator : Agent
     {
         return comRange * ((float)Random.Range(30, 50) / 100);
     }
-
 
     bool isOnRangeToStop()
     {

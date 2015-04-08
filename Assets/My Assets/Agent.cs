@@ -6,17 +6,20 @@ namespace Assets.My_Assets
 {
     public abstract class Agent : MonoBehaviour
     {
-        //public Transform m_Prey;
         public float hp;			//Salud de la entidad
         public int speed; 			//Velocidad de la entidad
         public int comRange;		//Rango de comunicacion
         public double stamina;		//Resistencia (nesesaria para correr etc....)
-        public float lifetime;		//Tiempo de vida en segundos 
+        public float maxLifeTime;   //Tiempo de vida en segundos
         public float attack;		//Daño que realiza la entidad
         public float flesh;         //Nutricion aportada a quien se alimente de la entidad 
         public float defense;       //Defensa de la entidad.
+        
         public int state;
+        public LifeEnum LifeState;
 
+        public float lifetime = 0;		//Tiempo de vida transcurridos en segundos 
+        public bool isLeader = false;  //Indica si este agente es lider
         public bool isNeededRun = false;
         public GameObject actualFood;
 
@@ -39,6 +42,13 @@ namespace Assets.My_Assets
             Die
         };
 
+        public enum LifeEnum
+        { 
+            Joven,
+            Adulto,
+            Vejez
+        }
+
         /// <summary>
         /// Inicializa los valores del agente.
         /// </summary>
@@ -51,68 +61,77 @@ namespace Assets.My_Assets
 
         #region Estimulos
         /// <summary>
-        /// Obtiene los lideres que hay en la manada
+        /// Obtiene los estimulos del agente en el instante actual
         /// </summary>
-        /// <returns>Retorna la cantidad de lideres en la manada</returns>
-        public float GetLeaderShip()
+        /// <returns>Retorna un arreglo con los estimulos del agente. Miedo, Liderazgo, Hambre y Apareamiento.</returns>
+        protected double[] GetStimulus()
         {
-            float leaderShipIndicator = 0;
-            Collider[] hitColliders = Physics.OverlapSphere(transform.position, comRange);
+            double[] lstStimulus = new double[4];
 
-            //Por cada objeto encontrado
-            foreach (Collider e in hitColliders)
+            lstStimulus[0] = GetFearStimulus();
+            lstStimulus[1] = GetLeaderShipStimulus();
+            lstStimulus[2] = this.isLeader == true ? GetHungryStimulus() : 0;
+            lstStimulus[3] = this.isLeader == true ? GetMatingStimulus() : 0;
+
+            return lstStimulus;
+        }
+
+        /// <summary>
+        /// Obtiene el estimulo de liderazgo de 0 - 1
+        /// </summary>
+        /// <returns>Retorna 0 si no se necesita cambiar lider, 1 si se necesita cambiar</returns>
+        private double GetLeaderShipStimulus()
+        {
+            double leaderShipIndicator = 0;
+            var classType = this.GetType();
+
+            //Se obtiene la manada
+            List<Agent> lstCharm = new List<Agent>();
+            if (classType == typeof(Predator))
             {
-                if (e.GetComponent<Predator>() != null)
-                {
-                    leaderShipIndicator++;///TODO: No cuenta lideres
-                }
+                lstCharm = GetCharm<Predator>();
+            }
+            else if (classType == typeof(Prey))
+            {
+                lstCharm = GetCharm<Prey>();
+            }
+
+            //Cuenta los lideres en la manada
+            int leaderCount = lstCharm.Count(x => x.isLeader == true);            
+            
+            if (leaderCount != 1)
+            {
+                leaderShipIndicator = 1;
             }
             return leaderShipIndicator;
         }
 
         /// <summary>
-        /// Obtiene el numero de presas para cazar
+        /// Obtiene el estimulo de miedo de 0 - 1
         /// </summary>
-        /// <returns>Retorna el numero de presas disponible para la caza</returns>
-        public float GetHunt()
+        /// <returns>Retorna la razon de peligro en el instante actual</returns>
+        private double GetFearStimulus()
         {
-            float huntIndicator = 0;
+            double fearIndicator = 0;
+            var classType = this.GetType();
 
-            Collider[] hitColliders = Physics.OverlapSphere(transform.position, comRange);
-            foreach (Collider e in hitColliders)
+            //Solo las presas tienen miedo.
+            if (classType == typeof(Prey))
             {
-                if (e.GetComponent<Prey>() != null)
-                {
-                    huntIndicator++;
-                }
-            }
-            return huntIndicator;
-        }
+                List<Agent> lstCharm = GetCharm<Prey>();
+                List<Agent> lstPredator = GetCharm<Predator>();
 
-        /// <summary>
-        /// Obtiene el numero de depredadores acechando la manada
-        /// </summary>
-        /// <returns>Retorna el numero de depresadores</returns>
-        public float GetFear()
-        {
-            float fearIndicator = 0;
-
-            Collider[] hitColliders = Physics.OverlapSphere(transform.position, comRange);
-            foreach (Collider e in hitColliders)
-            {
-                if (e.GetComponent<Predator>() != null)
-                {
-                    fearIndicator++;
-                }
+                fearIndicator = lstPredator.Count / lstCharm.Count;
             }
+            
             return fearIndicator;
         }
 
         /// <summary>
-        /// Obtiene el nivel de hambre de la manada
+        /// Obtiene el estimulo de hambre de la manada de 0 - 1
         /// </summary>
         /// <returns>Retorna el nivel de hambre</returns>
-        public double GetHungry()
+        private double GetHungryStimulus()
         {
             double hungryIndicator = 0;
             var classType = this.GetType();
@@ -131,16 +150,15 @@ namespace Assets.My_Assets
             //Se obtiene el promedio de stanmina
             hungryIndicator = lstCharm.Average(x => x.stamina);
 
-            return 100 - hungryIndicator;
+            return (100 - hungryIndicator) / 100;
         }
 
         /// <summary>
-        /// Obtiene el numero de agentes que estan en edad de reporducirse
+        /// Obtiene el estimulo de apareamiento de 0 - 1
         /// </summary>
-        /// <returns>Retorna el numero de agentes</returns>
-        public double GetMating()
+        /// <returns>Retorna nivel de apareamiento de la manada</returns>
+        private double GetMatingStimulus()
         {
-            double matingIndicator = 0;
             var classType = this.GetType();
 
             //Se obtiene la manada
@@ -154,8 +172,8 @@ namespace Assets.My_Assets
                 lstCharm = GetCharm<Prey>();
             }
 
-            //Se obtiene los agentes que estan en edad de procrear
-            matingIndicator = lstCharm.Count(x => x.lifetime > 300 && x.lifetime < 540);
+            //Se obtiene la razon de los agentes que estan en edad de procrear entre el total de la manada
+            double matingIndicator = lstCharm.Count(x => x.LifeState == LifeEnum.Adulto) / lstCharm.Count;
 
             return matingIndicator;
         }
@@ -186,12 +204,9 @@ namespace Assets.My_Assets
         /// Realiza las funciones biologicas de consumir energia del individuo
         /// </summary>
         /// <returns>Retorna si el individuo esta vivo</returns>
-        protected bool metabolism()
+        protected bool Metabolism()
         {
-            if (lifetime > 0)
-            {
-                lifetime -= Time.deltaTime;
-            }
+            UpdateLifeTime();
 
             float factor = 1f;
             if (isNeededRun)
@@ -203,23 +218,44 @@ namespace Assets.My_Assets
                     Destroy(gameObject);
                 return false;
             }
-            if (0 < this.stamina)
+            if (0 < stamina)
             {
                 stamina -= Time.deltaTime * factor * (1 / 10f); //Cada 10 segundo gasta uno de stamina
             }
             if (stamina <= 0)
             {
-                if (0 < this.hp)
+                if (0 < hp)
                 {
                     hp -= Time.deltaTime * factor * (1 / 15f); // Cada 15 segundos gasta uno de hp si no tiene stamina
                 }
             }
-            if (hp <= 0 || lifetime < 0)
+            if (hp <= 0 || lifetime >= maxLifeTime)
             {
                 die();
                 return false;
             }
             return true;
+        }
+        
+        /// <summary>
+        /// Actualiza el tiempo de vida y el estado del agente
+        /// </summary>
+        private void UpdateLifeTime()
+        {
+            lifetime += Time.deltaTime;
+    
+            if (lifetime < 240)
+            {
+                LifeState = LifeEnum.Joven;
+            }
+            else if (lifetime < 480)
+            {
+                LifeState = LifeEnum.Adulto;
+            }
+            else
+            {
+                LifeState = LifeEnum.Vejez;
+            }
         }
     }
 }

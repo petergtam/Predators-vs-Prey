@@ -14,7 +14,7 @@ public class Prey : Agent
         //Propiedades variables
         flesh = Random.Range(300, 700);
         speed = Random.Range(6, 10);
-        lifetime = Random.Range(540, 720); //De 9 a 12 minutos
+        maxLifeTime = Random.Range(540, 720); //De 9 a 12 minutos
         attack = Random.Range(6, 12);
         defense = Random.Range(0, 5);
 
@@ -25,7 +25,7 @@ public class Prey : Agent
     void Start()
     {
         InitValue();
-        this.GetHungry();
+
         //Fija los parametros iniciales en torno a la escala
         comRange = (int)(comRange * ((float)transform.localScale.x / 0.3));
         this.stoppingDistance = travelStopDistance();
@@ -49,7 +49,7 @@ public class Prey : Agent
     // Update is called once per frame	
     void Update()
     {
-        if (!metabolism())
+        if (!Metabolism())
             return;
 
         if (isNeededRun)
