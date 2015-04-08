@@ -14,11 +14,11 @@ namespace Assets.My_Assets
         public float attack;		//Daño que realiza la entidad
         public float flesh;         //Nutricion aportada a quien se alimente de la entidad 
         public float defense;       //Defensa de la entidad.
-        
-        public int state;
+
+        public States state;
         public LifeEnum LifeState;
 
-        public float lifetime = 0;		//Tiempo de vida transcurridos en segundos 
+        public float lifetime;		//Tiempo de vida transcurridos en segundos 
         public bool isLeader = false;  //Indica si este agente es lider
         public bool isNeededRun = false;
         public GameObject actualFood;
@@ -27,7 +27,7 @@ namespace Assets.My_Assets
         protected GameObject leader;
         protected float stoppingDistance;
 
-        protected enum States
+        public enum States
         {
             ChoosingLeader, 
             Searching, 
@@ -49,6 +49,14 @@ namespace Assets.My_Assets
             Vejez
         }
 
+        public enum StimulusEnum
+        {
+            LeaderShip,
+            Fear,
+            Hungry,
+            Mating
+        }
+
         /// <summary>
         /// Inicializa los valores del agente.
         /// </summary>
@@ -60,6 +68,15 @@ namespace Assets.My_Assets
         protected abstract void die();
 
         #region Estimulos
+
+        public StimulusEnum SelectStimulu()
+        {
+            double[] lstEstimulus = GetStimulus();
+            //TODO: Implementar red bayesiana
+
+            return StimulusEnum.Hungry;
+        }
+
         /// <summary>
         /// Obtiene los estimulos del agente en el instante actual
         /// </summary>
@@ -173,7 +190,7 @@ namespace Assets.My_Assets
             }
 
             //Se obtiene la razon de los agentes que estan en edad de procrear entre el total de la manada
-            double matingIndicator = lstCharm.Count(x => x.LifeState == LifeEnum.Adulto) / lstCharm.Count;
+            double matingIndicator = (double) lstCharm.Count(x => x.LifeState == LifeEnum.Adulto) / lstCharm.Count;
 
             return matingIndicator;
         }
@@ -187,7 +204,14 @@ namespace Assets.My_Assets
         public List<Agent> GetCharm<T>() where T : Agent
         {
             List<Agent> lstCharm = new List<Agent>();
-            
+
+            //Si el agente actual pertenece a la manada lo agrega
+            var classType = GetType();
+            if (classType == typeof (T))
+            {
+                lstCharm.Add(this);
+            }
+
             Collider[] hitColliders = Physics.OverlapSphere(transform.position, comRange);
             foreach (Collider e in hitColliders)
             {
@@ -212,7 +236,7 @@ namespace Assets.My_Assets
             if (isNeededRun)
                 factor *= 2f;
 
-            if (state == (int)States.Die)
+            if (state == States.Die)
             {
                 if (flesh <= 0)
                     Destroy(gameObject);

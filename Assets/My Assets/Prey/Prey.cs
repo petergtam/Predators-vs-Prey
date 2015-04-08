@@ -1,5 +1,7 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using Assets.My_Assets;
+using Random = UnityEngine.Random;
 
 public class Prey : Agent
 {
@@ -9,6 +11,7 @@ public class Prey : Agent
         hp = 100f;
         stamina = 100f;
         comRange = 10;
+        lifetime = 0;	
         isNeededRun = false;
 
         //Propiedades variables
@@ -18,7 +21,7 @@ public class Prey : Agent
         attack = Random.Range(6, 12);
         defense = Random.Range(0, 5);
 
-        state = (int)States.ChoosingLeader;
+        state = States.ChoosingLeader;
     }
 
     // Use this for initialization
@@ -45,9 +48,132 @@ public class Prey : Agent
         }
     }
 
+    private void Update()
+    {
+        if (!Metabolism())
+            return;
 
-    // Update is called once per frame	
-    void Update()
+        if (isNeededRun)
+        {//TODO: Nunca cambia entre correr y caminar las presas
+            nav.speed = (float)(speed * ((stamina < 50 ? 50 : stamina) / 100.0));
+        }
+        else
+            nav.speed = (float)((speed / 3.0) * ((stamina < 50 ? 50 : stamina) / 100.0));
+
+
+        StimulusEnum stimulus = SelectStimulu();
+
+        switch (stimulus)
+        {
+            case StimulusEnum.LeaderShip: //Se elige el lider
+                behavior_select_leader();
+                break;
+
+            case StimulusEnum.Fear:
+                if (isLeader == true)
+                {
+                    behavior_run();
+                }
+                else
+                {
+                    //Comunicar al lider
+                    BroadCast("Peligro manada", null);
+                }
+                break;
+
+            case StimulusEnum.Hungry:
+                behavior_hungry();
+                break;
+
+            case StimulusEnum.Mating:
+                if (isLeader == true)
+                {
+                    behavior_mating();
+                }
+                break;
+
+            default:
+                //TODO: Definir cual es el dafault
+                throw new NotImplementedException();
+                break;
+        }
+
+    }
+
+    private void behavior_hungry()
+    {
+        if (isLeader == true || isMyLeader(gameObject))
+        {
+            if (state == States.Searching)
+            {
+                //Entra en estado para buscar comida
+                behavior_leader_searching();
+            }
+            else if (state == States.Following)
+            {
+                //Entra en estado de viaje en grupo
+                behavior_leader_following();
+            }
+            else if (state == States.Hunting)
+            {
+                behavior_leader_Hunting();
+            }
+            else if (state == States.Eating)
+            {
+                behavior_leader_Eating();
+            }
+        }
+        else
+        {
+            if (state == States.Following)
+            {
+                //Seguir al lider
+                behavior_follower_following();
+            }
+            else if (state == States.Waiting)
+            {
+                //Esperar a que el lider tome una decicion
+                behavior_follower_waiting();
+            }
+            else if (state == States.Hunting)
+            {
+                behavior_follower_Hunting();
+            }
+            else if (state == States.Eating)
+            {
+                behavior_follower_Eating();
+            }
+        }
+    }
+
+    private void behavior_select_leader()
+    {
+        if (GetComponent<PreyLeaderChoosing>() == null)
+            setLeader(gameObject);
+        else
+        {
+            GetComponent<PreyLeaderChoosing>().choose();
+        }
+    }
+
+    private void behavior_run()
+    {
+        //Find a safe place
+        throw new NotImplementedException();
+    }
+
+    private void behavior_mating()
+    {
+        //Find couple
+
+        //Procreate
+
+        //Born a new child
+        throw new NotImplementedException();
+    }
+
+    /*
+    void UpdateVIEJO()
     {
         if (!Metabolism())
             return;
@@ -55,13 +181,13 @@ public class Prey : Agent
         if (isNeededRun)
         {
             nav.speed = (float)(speed * ((stamina < 50 ? 50 : stamina) / 100.0));
-            if (state != (int)States.Hiding)
+            if (state != States.Hiding)
                 isNeededRun = false;
         }
         else
             nav.speed = (float)((speed / 3.0) * ((stamina < 50 ? 50 : stamina) / 100.0));
 
-        if (state == (int)States.Hiding)
+        if (state == States.Hiding)
         {
             if (!isNeededRun)
             {
@@ -74,12 +200,12 @@ public class Prey : Agent
                 if (isOnRangeToStop())
                 {
                     stop();
-                    state = (int)States.ChoosingLeader;
+                    state = States.ChoosingLeader;
                 }
             }
 
         }
-        else if (leader == null && state != (int)States.ChoosingLeader)
+        else if (leader == null && state != States.ChoosingLeader)
         {
 
             if (GetComponent<PreyLeaderChoosing>() == null)
@@ -90,7 +216,7 @@ public class Prey : Agent
             }
 
         }
-        else if (state != (int)States.ChoosingLeader)
+        else if (state != States.ChoosingLeader)
         {
 
 
@@ -99,25 +225,25 @@ public class Prey : Agent
             if (isMyLeader(gameObject))
             {
                 //senseForSomething();
-                if (state == (int)States.Searching)
+                if (state == States.Searching)
                 {			//Entra en estado para buscar comida
                     ////Debug.Log("Buscando por lugar con comida");
                     behavior_leader_searching();
                     //Debug.Log("LEader searching");
                 }
-                else if (state == (int)States.Following)
+                else if (state == States.Following)
                 {	//Entra en estado de viaje en grupo
                     ////Debug.Log("Viajando lugar con comida");
                     behavior_leader_following();
                     //Debug.Log("LEader Follow");
                 }
-                else if (state == (int)States.Hunting)
+                else if (state ==States.Hunting)
                 {
                     ////Debug.Log("Cazando comida");
                     behavior_leader_Hunting();
                     //Debug.Log("LEader Hunting");
                 }
-                else if (state == (int)States.Eating)
+                else if (state == States.Eating)
                 {
                     ////Debug.Log("Comiendo...");
                     behavior_leader_Eating();
@@ -127,27 +253,27 @@ public class Prey : Agent
             }
             else
             {
-                if (state == (int)States.Following)
+                if (state == States.Following)
                 {			//Seguir al lider
                     behavior_follower_following();
 
                 }
-                else if (state == (int)States.Waiting)
+                else if (state == States.Waiting)
                 {		//Esperar a que el lider tome una decicion
                     behavior_follower_waiting();
 
                 }
-                else if (state == (int)States.Reagruping)
+                else if (state == States.Reagruping)
                 {
 
                 }
-                else if (state == (int)States.Hunting)
+                else if (state == States.Hunting)
                 {
                     ////Debug.Log("Cazando comida");
                     behavior_follower_Hunting();
 
                 }
-                else if (state == (int)States.Eating)
+                else if (state == States.Eating)
                 {
                     ////Debug.Log("Comiendo...");
                     behavior_follower_Eating();
@@ -155,7 +281,7 @@ public class Prey : Agent
             }
         }
     }
-
+    */
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////// Comportamiento del lider ///////////////////////////////////////////////////////////////////////////////////
@@ -167,7 +293,7 @@ public class Prey : Agent
         Vector3 foodPosition = searchForFood();
         if (foodPosition != Vector3.zero)
         {
-            state = (int)States.Following;
+            state = States.Following;
             order_followMe(gameObject);
             nav.destination = foodPosition;
         }
@@ -179,20 +305,20 @@ public class Prey : Agent
         {
             if (hungry())
             { //TODO: Solo importa si el lider tiene hambre no los demas (cambiar)
-                state = (int)States.Hunting;
+                state = States.Hunting;
                 order_hunt(gameObject);
                 stop();
                 actualFood = getBestFood();
                 if (actualFood == null)
                 {
-                    state = (int)States.Searching;
+                    state = States.Searching;
                     return;
                 }
                 nav.destination = actualFood.transform.position;
             }
             else
             {
-                state = (int)States.Searching;
+                state = States.Searching;
                 //order_stop(gameObject);
             }
         }
@@ -206,7 +332,7 @@ public class Prey : Agent
             actualFood = getBestFood();
             if (actualFood == null)
             {
-                state = (int)States.Searching;
+                state = States.Searching;
                 //order_stop(gameObject);
             }
         }
@@ -218,7 +344,7 @@ public class Prey : Agent
             transform.LookAt(actualFood.transform);
             if (actualFood.GetComponent<Plant>().hp < 0)
             {
-                state = (int)States.Eating;
+                state = States.Eating;
                 this.GetComponent<DinasorsAnimationCorrector>().eating();
             }
             else
@@ -234,7 +360,7 @@ public class Prey : Agent
         if (actualFood == null)
         {
             this.GetComponent<DinasorsAnimationCorrector>().idle();
-            state = (int)States.Searching;
+            state = States.Searching;
             return;
         }
 
@@ -242,12 +368,12 @@ public class Prey : Agent
         if (actualFood.GetComponent<Plant>().flesh < 0)
         {
             this.GetComponent<DinasorsAnimationCorrector>().idle();
-            state = (int)States.Searching;
+            state = States.Searching;
         }
 
         if (satisfied())
         {
-            state = (int)States.Searching;
+            state = States.Searching;
             this.GetComponent<DinasorsAnimationCorrector>().idle();
         }
     }
@@ -267,7 +393,7 @@ public class Prey : Agent
         nav.stoppingDistance = travelStopDistance();
         nav.destination = leader.transform.position;
 
-        /*if( leader.GetComponent<Prey>().state != (int)States.Following && leader.GetComponent<Prey>().state != (int)States.Searching){
+        /*if( leader.GetComponent<Prey>().state != States.Following && leader.GetComponent<Prey>().state != States.Searching){
             if( isOnRangeToStop() ){
                 stop();
                 state = (int) States.Waiting;
@@ -303,7 +429,7 @@ public class Prey : Agent
             actualFood = getBestFood();
             if (actualFood == null)
             {
-                state = (int)States.Following;
+                state = States.Following;
                 nav.stoppingDistance = travelStopDistance();
 
                 //Debug.Log ("No Food, nearby");
@@ -320,7 +446,7 @@ public class Prey : Agent
             nav.destination = transform.position;
             if (actualFood.GetComponent<Plant>().hp < 0)
             {
-                state = (int)States.Eating;
+                state = States.Eating;
                 this.GetComponent<DinasorsAnimationCorrector>().eating();
             }
             else
@@ -335,7 +461,7 @@ public class Prey : Agent
     {
         if (actualFood == null)
         {
-            state = (int)States.Following;
+            state = States.Following;
             nav.stoppingDistance = travelStopDistance();
             this.GetComponent<DinasorsAnimationCorrector>().idle();
             return;
@@ -345,12 +471,12 @@ public class Prey : Agent
         if (actualFood.GetComponent<Plant>().flesh < 0)
         {
             this.GetComponent<DinasorsAnimationCorrector>().idle();
-            state = (int)States.Hunting;
+            state = States.Hunting;
         }
 
         if (satisfied())
         {
-            state = (int)States.Following;
+            state = States.Following;
             nav.stoppingDistance = travelStopDistance();
             this.GetComponent<DinasorsAnimationCorrector>().idle();
         }
@@ -401,13 +527,13 @@ public class Prey : Agent
     ///////////////////////////////////////////////////////////////
     void LeaderSaysFollowMe(GameObject l)
     {
-        if (state != (int)States.Following && 0 < hp)
+        if (state != States.Following && 0 < hp)
         {
             if (isMyLeader(l))
             {
                 if (!isMe(leader))
                 {
-                    state = (int)States.Following;
+                    state = States.Following;
                     order_followMe(l);	//Reply the message to others
                 }
             }
@@ -417,13 +543,13 @@ public class Prey : Agent
 
     void LeaderSaysStop(GameObject l)
     {
-        if (state != (int)States.Waiting && 0 < hp)
+        if (state != States.Waiting && 0 < hp)
         {
             if (isMyLeader(l))
             {
                 if (!isMe(leader))
                 {
-                    state = (int)States.Waiting;
+                    state = States.Waiting;
                     order_stop(l);	//Reply the message to others
                 }
             }
@@ -432,13 +558,13 @@ public class Prey : Agent
 
     void LeaderSaysReagrupate(GameObject l)
     {
-        if (state != (int)States.Reagruping && 0 < hp)
+        if (state != States.Reagruping && 0 < hp)
         {
             if (isMyLeader(l))
             {
                 if (!isMe(leader))
                 {
-                    state = (int)States.Reagruping;
+                    state = States.Reagruping;
                     nav.destination = Dispersal(l.transform.position);
                     order_reagrupate(l);	//Reply the message to others
                 }
@@ -448,13 +574,13 @@ public class Prey : Agent
 
     void LeaderSaysHunt(GameObject l)
     {
-        if (state != (int)States.Hunting && 0 < hp)
+        if (state != States.Hunting && 0 < hp)
         {
             if (isMyLeader(l))
             {
                 if (!isMe(leader))
                 {
-                    state = (int)States.Hunting;
+                    state = States.Hunting;
                     nav.destination = l.GetComponent<NavMeshAgent>().destination;
                     order_hunt(l);	//Reply the message to others
                 }
@@ -471,7 +597,7 @@ public class Prey : Agent
             {
                 if (!isMe(leader))
                 {
-                    state = (int)States.Hiding;
+                    state = States.Hiding;
                     leader = null;
                     order_unsetLeader(l);	//Reply the message to others
                 }
@@ -484,7 +610,7 @@ public class Prey : Agent
     void SaysPanic(GameObject l)
     {
         if (0 < hp)
-            state = (int)States.Hiding;
+            state = States.Hiding;
 
     }
 
@@ -531,7 +657,7 @@ public class Prey : Agent
     {
         leader = l;
         nav.avoidancePriority = 1;
-        state = (int)States.Searching;
+        state = States.Searching;
     }
 
 
@@ -610,7 +736,7 @@ public class Prey : Agent
 
     protected override void die()
     {
-        state = (int)States.Die;
+        state = States.Die;
         this.GetComponent<DinasorsAnimationCorrector>().die();
         gameObject.GetComponent<PreyNeuronalChoose>().enabled = false;
         if (isMyLeader(gameObject))
