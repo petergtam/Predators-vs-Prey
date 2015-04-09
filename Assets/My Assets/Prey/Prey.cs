@@ -1,10 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Assets.My_Assets;
 using Random = UnityEngine.Random;
 
 public class Prey : Agent
 {
+    public Plant actualFood;
     protected override void InitValue()
     {
         //Propiedades fijas
@@ -31,7 +34,6 @@ public class Prey : Agent
 
         //Fija los parametros iniciales en torno a la escala
         comRange = (int)(comRange * ((float)transform.localScale.x / 0.3));
-        this.stoppingDistance = travelStopDistance();
 
         //Inicializa el NavMeshAgent
         nav = GetComponent<NavMeshAgent>();
@@ -106,21 +108,70 @@ public class Prey : Agent
         {
             if (state == States.Searching)
             {
-                //Entra en estado para buscar comida
-                behavior_leader_searching();
+                //Calcula nueva posicion de la comida
+                Vector3 foodPosition = searchForFood();
+                if (foodPosition != Vector3.zero)
+                {
+                    nav.destination = foodPosition;
+                    state = States.Moving;
+                    order_followMe(gameObject);
+                }
             }
-            else if (state == States.Following)
+            else if (state == States.Moving)
             {
                 //Entra en estado de viaje en grupo
-                behavior_leader_following();
+                if (IsOnRangeToStop(1f))
+                {
+                    Stop();
+                    state = States.Hunting;
+                    order_hunt(gameObject);
+                }
             }
             else if (state == States.Hunting)
             {
-                behavior_leader_Hunting();
+                //Busca una nueva planta en el area en el que esta
+                if (actualFood == null)
+                {
+                    actualFood = getBestFood();
+                    if (actualFood == null)
+                    {
+                        state = States.Searching;
+                    }
+                    else
+                    {
+                        nav.destination = actualFood.transform.position;
+                    }
+                }
+                else
+                {
+                    if (DistanceFromDestination() <= distanceToBite())
+                    {
+                        Stop();
+                        //Volteo a ver a la planta
+                        transform.LookAt(actualFood.transform);
+                        state = States.Eating;
+                        GetComponent<DinasorsAnimationCorrector>().eating();
+                    }
+                }
             }
             else if (state == States.Eating)
             {
-                behavior_leader_Eating();
+                if (actualFood == null)
+                {
+                    GetComponent<DinasorsAnimationCorrector>().idle();
+                    state = States.Searching;
+                }
+                else
+                {
+                    BiteEnemy();
+                    EatEnemy();
+
+                    if (actualFood.GetComponent<Plant>().flesh < 0)
+                    {
+                        GetComponent<DinasorsAnimationCorrector>().idle();
+                        state = States.Searching;
+                    }
+                }
             }
         }
         else
@@ -172,225 +223,11 @@ public class Prey : Agent
         throw new NotImplementedException();
     }
 
-    /*
-    void UpdateVIEJO()
-    {
-        if (!Metabolism())
-            return;
-
-        if (isNeededRun)
-        {
-            nav.speed = (float)(speed * ((stamina < 50 ? 50 : stamina) / 100.0));
-            if (state != States.Hiding)
-                isNeededRun = false;
-        }
-        else
-            nav.speed = (float)((speed / 3.0) * ((stamina < 50 ? 50 : stamina) / 100.0));
-
-        if (state == States.Hiding)
-        {
-            if (!isNeededRun)
-            {
-                PreyNeuronalChoose.NeuralReturn r = GetComponent<PreyNeuronalChoose>().migrate();
-                nav.destination = r.node.transform.position;
-                isNeededRun = true;
-            }
-            else
-            {
-                if (isOnRangeToStop())
-                {
-                    stop();
-                    state = States.ChoosingLeader;
-                }
-            }
-
-        }
-        else if (leader == null && state != States.ChoosingLeader)
-        {
-
-            if (GetComponent<PreyLeaderChoosing>() == null)
-                setLeader(gameObject);
-            else
-            {
-                GetComponent<PreyLeaderChoosing>().choose();
-            }
-
-        }
-        else if (state != States.ChoosingLeader)
-        {
 
 
-
-            //LEADER BEHAVIOR 
-            if (isMyLeader(gameObject))
-            {
-                //senseForSomething();
-                if (state == States.Searching)
-                {			//Entra en estado para buscar comida
-                    ////Debug.Log("Buscando por lugar con comida");
-                    behavior_leader_searching();
-                    //Debug.Log("LEader searching");
-                }
-                else if (state == States.Following)
-                {	//Entra en estado de viaje en grupo
-                    ////Debug.Log("Viajando lugar con comida");
-                    behavior_leader_following();
-                    //Debug.Log("LEader Follow");
-                }
-                else if (state ==States.Hunting)
-                {
-                    ////Debug.Log("Cazando comida");
-                    behavior_leader_Hunting();
-                    //Debug.Log("LEader Hunting");
-                }
-                else if (state == States.Eating)
-                {
-                    ////Debug.Log("Comiendo...");
-                    behavior_leader_Eating();
-                    //Debug.Log("LEader eating");
-                }
-                //FOLLOWER BEHAVIOR 
-            }
-            else
-            {
-                if (state == States.Following)
-                {			//Seguir al lider
-                    behavior_follower_following();
-
-                }
-                else if (state == States.Waiting)
-                {		//Esperar a que el lider tome una decicion
-                    behavior_follower_waiting();
-
-                }
-                else if (state == States.Reagruping)
-                {
-
-                }
-                else if (state == States.Hunting)
-                {
-                    ////Debug.Log("Cazando comida");
-                    behavior_follower_Hunting();
-
-                }
-                else if (state == States.Eating)
-                {
-                    ////Debug.Log("Comiendo...");
-                    behavior_follower_Eating();
-                }
-            }
-        }
-    }
-    */
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ///////////////// Comportamiento del lider ///////////////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    void behavior_leader_searching()
-    {
-        //Calcula nueva posicion de la comida
-        Vector3 foodPosition = searchForFood();
-        if (foodPosition != Vector3.zero)
-        {
-            state = States.Following;
-            order_followMe(gameObject);
-            nav.destination = foodPosition;
-        }
-    }
-
-    void behavior_leader_following()
-    {
-        if (isOnRangeToStop())
-        {
-            if (hungry())
-            { //TODO: Solo importa si el lider tiene hambre no los demas (cambiar)
-                state = States.Hunting;
-                order_hunt(gameObject);
-                stop();
-                actualFood = getBestFood();
-                if (actualFood == null)
-                {
-                    state = States.Searching;
-                    return;
-                }
-                nav.destination = actualFood.transform.position;
-            }
-            else
-            {
-                state = States.Searching;
-                //order_stop(gameObject);
-            }
-        }
-    }
-
-
-    void behavior_leader_Hunting()
-    {
-        if (actualFood == null)
-        {
-            actualFood = getBestFood();
-            if (actualFood == null)
-            {
-                state = States.Searching;
-                //order_stop(gameObject);
-            }
-        }
-
-        nav.destination = actualFood.transform.position;
-        if (distanceFromDestination() <= distanceToBite())
-        {
-            nav.destination = transform.position;
-            transform.LookAt(actualFood.transform);
-            if (actualFood.GetComponent<Plant>().hp < 0)
-            {
-                state = States.Eating;
-                this.GetComponent<DinasorsAnimationCorrector>().eating();
-            }
-            else
-            {
-                biteEnemy();
-            }
-        }
-    }
-
-
-    void behavior_leader_Eating()
-    {
-        if (actualFood == null)
-        {
-            this.GetComponent<DinasorsAnimationCorrector>().idle();
-            state = States.Searching;
-            return;
-        }
-
-        eatEnemy();
-        if (actualFood.GetComponent<Plant>().flesh < 0)
-        {
-            this.GetComponent<DinasorsAnimationCorrector>().idle();
-            state = States.Searching;
-        }
-
-        if (satisfied())
-        {
-            state = States.Searching;
-            this.GetComponent<DinasorsAnimationCorrector>().idle();
-        }
-    }
-
-
-
-
-
-
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ///////////////// Comportamiento del Seguidor ////////////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+    #region Comportamiento del Seguidor
     void behavior_follower_following()
     {
-        nav.stoppingDistance = travelStopDistance();
         nav.destination = leader.transform.position;
 
         /*if( leader.GetComponent<Prey>().state != States.Following && leader.GetComponent<Prey>().state != States.Searching){
@@ -405,13 +242,13 @@ public class Prey : Agent
     {
         if (nav.velocity != Vector3.zero)
         {
-            stop();
+            Stop();
         }
     }
 
     void behavior_follower_reagruping()
     {
-        if (isOnRangeToStop(3f))
+        if (IsOnRangeToStop(3f))
         {
             /*stop();
             state = (int) States.Hunting;
@@ -421,7 +258,6 @@ public class Prey : Agent
         }
     }
 
-
     void behavior_follower_Hunting()
     {
         if (actualFood == null)
@@ -430,7 +266,6 @@ public class Prey : Agent
             if (actualFood == null)
             {
                 state = States.Following;
-                nav.stoppingDistance = travelStopDistance();
 
                 //Debug.Log ("No Food, nearby");
                 return;
@@ -440,7 +275,7 @@ public class Prey : Agent
         nav.stoppingDistance = 0;
         //nav.stoppingDistance = distanceToBite();
         nav.destination = actualFood.transform.position;
-        if (distanceFromDestination() <= distanceToBite())
+        if (DistanceFromDestination() <= distanceToBite())
         {
 
             nav.destination = transform.position;
@@ -451,7 +286,7 @@ public class Prey : Agent
             }
             else
             {
-                biteEnemy();
+                BiteEnemy();
             }
         }
 
@@ -462,35 +297,20 @@ public class Prey : Agent
         if (actualFood == null)
         {
             state = States.Following;
-            nav.stoppingDistance = travelStopDistance();
             this.GetComponent<DinasorsAnimationCorrector>().idle();
             return;
         }
 
-        eatEnemy();
+        EatEnemy();
         if (actualFood.GetComponent<Plant>().flesh < 0)
         {
             this.GetComponent<DinasorsAnimationCorrector>().idle();
             state = States.Hunting;
         }
-
-        if (satisfied())
-        {
-            state = States.Following;
-            nav.stoppingDistance = travelStopDistance();
-            this.GetComponent<DinasorsAnimationCorrector>().idle();
-        }
     }
+    #endregion
 
-
-
-
-
-
-
-    ///////////////////////////////////////////////////////////////
-    ///////////////// Ordenes del lider ///////////////////////////
-    ///////////////////////////////////////////////////////////////
+    #region Ordenes del lider
     void order_followMe(GameObject l)
     {
         BroadCast("LeaderSaysFollowMe", l);
@@ -505,8 +325,7 @@ public class Prey : Agent
     {
         BroadCast("LeaderSaysReagrupate", l);
     }
-
-
+    
     void order_hunt(GameObject l)
     {
         BroadCast("LeaderSaysHunt", l);
@@ -521,10 +340,9 @@ public class Prey : Agent
     {
         BroadCast("SaysPanic", l);
     }
+    #endregion
 
-    ///////////////////////////////////////////////////////////////
-    ///////////////// Reacciones a ordenes del lider //////////////
-    ///////////////////////////////////////////////////////////////
+    #region Reacciones a ordenes del lider
     void LeaderSaysFollowMe(GameObject l)
     {
         if (state != States.Following && 0 < hp)
@@ -539,7 +357,6 @@ public class Prey : Agent
             }
         }
     }
-
 
     void LeaderSaysStop(GameObject l)
     {
@@ -588,7 +405,6 @@ public class Prey : Agent
         }
     }
 
-
     void LeaderSaysUnsetLeader(GameObject l)
     {
         if (leader != null && 0 < hp)
@@ -605,16 +421,13 @@ public class Prey : Agent
         }
     }
 
-
-
     void SaysPanic(GameObject l)
     {
         if (0 < hp)
             state = States.Hiding;
 
     }
-
-
+    #endregion
     /*
      * Funcion para enviar a todos los objetos cercanos
      * string Messaage: Funcion que sera ejecutada en los objetos encontrados
@@ -634,8 +447,6 @@ public class Prey : Agent
             }
         }
     }
-
-
 
     /*
      * getLeadershipStat
@@ -657,7 +468,7 @@ public class Prey : Agent
     {
         leader = l;
         nav.avoidancePriority = 1;
-        state = States.Searching;
+        state = States.Moving;
     }
 
 
@@ -677,18 +488,6 @@ public class Prey : Agent
         return false;
     }
 
-
-
-
-    /**
-     *	Regresa la distancia desde la pocion actual a el destino deseado
-     */
-    float distanceFromDestination()
-    {
-        return Vector3.Distance(transform.position, nav.destination);
-    }
-
-
     /*
      *	Regresa una pocicion aleatoria alrededor de la pocicion dada
      */
@@ -699,33 +498,10 @@ public class Prey : Agent
         return pos;
     }
 
-
-    float travelStopDistance()
-    {
-        return comRange * ((float)Random.Range(30, 50) / 100);
-    }
-
-
-    bool isOnRangeToStop()
-    {
-        return isOnRangeToStop(1f);
-    }
-
-    bool isOnRangeToStop(float factor)
-    {
-        return (distanceFromDestination() < this.stoppingDistance * factor);
-    }
-
-    /*
-     *	Funcion que detiene al nav Agent
-     */
-    private void stop()
-    {
-        nav.destination = transform.position;
-    }
-
-    //Mueve las estadisticas del enemigo y del agente
-    void eatEnemy()
+    /// <summary>
+    /// Funcion de comer al enemigo
+    /// </summary>
+    protected override void EatEnemy()
     {
         actualFood.GetComponent<Plant>().flesh -= this.attack * Time.deltaTime;
         if (this.stamina < 100f)
@@ -734,14 +510,23 @@ public class Prey : Agent
             this.hp += (this.attack / Time.deltaTime) / 10; //Time.deltaTime Es el tiempo desde el ultimo frame
     }
 
-    protected override void die()
+    /// <summary>
+    /// Funcion que inflige daño al enemigo
+    /// </summary>
+    protected override void BiteEnemy()
+    {
+        actualFood.GetComponent<Plant>().hp -= this.attack / (1f / Time.deltaTime);
+    }
+
+
+    protected override void Die()
     {
         state = States.Die;
-        this.GetComponent<DinasorsAnimationCorrector>().die();
+        GetComponent<DinasorsAnimationCorrector>().die();
         gameObject.GetComponent<PreyNeuronalChoose>().enabled = false;
+        defense = 0;
         if (isMyLeader(gameObject))
         {
-            LeaderSaysUnsetLeader(gameObject);
             Destroy(gameObject.transform.Find("leaderLigth").gameObject);
         }
     }
@@ -752,92 +537,45 @@ public class Prey : Agent
     /**
      * Distancia Optima para atacar al enemigo actual
      */
-    float distanceToBite()
+    float distanceToBite()//TODO:Ver exactamente que hace
     {
-        return ((nav.radius) * transform.localScale.x * 1.3f) +
-            ((actualFood.GetComponent<MeshRenderer>().bounds.size.x) * 1.3f);
+        return ((nav.radius) * transform.localScale.x * 1.3f) + ((actualFood.GetComponent<MeshRenderer>().bounds.size.x) * 1.3f);
     }
 
 
-    /**
-     * Funcion que inflige daño al enemigo
-     */
-    void biteEnemy()
+    
+    
+    /// <summary>
+    /// Retorna la mejor planta disponible
+    /// </summary>
+    /// <returns>Retorna la mejor planta disponible</returns>
+    Plant getBestFood()
     {
-        actualFood.GetComponent<Plant>().hp -= this.attack / (1f / Time.deltaTime);
-    }
-
-    /**
-     **Recive un arreglo de GameObject y regresa el mas cercano a la posicion actual
-     */
-    GameObject getNeardest(GameObject[] objects)
-    {
-        if (objects == null)
+        List<Plant> lstFood = getNearbyFood();
+        if (lstFood.Count == 0)
             return null;
-        if (objects.Length == 0)
-        {
-            ////Debug.Log("GetNeardes: Lista vacia");
-            return null;
-        }
-        GameObject ret = objects[0];
-        float distMin, distTemp;
-        distMin = Vector3.Distance(transform.position, ret.transform.position);
-        for (int i = 1; i < objects.Length; i++)
-        {
-            distTemp = Vector3.Distance(transform.position, objects[i].transform.position);
-            if (distTemp < distMin)
-            {
-                distMin = distTemp;
-                ret = objects[i];
-            }
-        }
-        return ret;
+        return lstFood[Random.Range(0,lstFood.Count-1)];
     }
 
-
-    /**
-     *	Obtiene los objetos "COMIDA", cercanos a la posicion del objeto
-     */
-    GameObject[] getNearbyFood()
+    /// <summary>
+    /// Obtiene los objetos "COMIDA", cercanos a la posicion del objeto
+    /// </summary>
+    /// <returns>Retorna la lista de comida</returns>
+    protected List<Plant> getNearbyFood()
     {
-        int foodCounter = 0;
+        List<Plant> lstFood = new List<Plant>();
+
         Collider[] hitColliders = Physics.OverlapSphere(transform.position, comRange * 2.5f);
-        for (int i = 0; i < hitColliders.Length; i++)
+        foreach (Collider e in hitColliders)
         {
-            if (!isMe(hitColliders[i].gameObject))
-            { //No me lo envio a mi
-                if (hitColliders[i].tag == "Tree")
-                {
-                    foodCounter++;
-                }
+            Plant oPlant = e.GetComponent<Plant>();
+            if (oPlant != null)
+            {
+                lstFood.Add(oPlant);
             }
         }
-        GameObject[] ret = new GameObject[foodCounter];
-        for (int i = 0; i < hitColliders.Length; i++)
-        {
-            if (!isMe(hitColliders[i].gameObject))
-            { //No me lo envio a mi
-                if (hitColliders[i].tag == "Tree")
-                {
-                    ret[--foodCounter] = hitColliders[i].gameObject;
-                }
-            }
-        }
-        return ret;
+        return lstFood;
     }
-
-
-    /*
-     * Retorna la mejor presa posible
-     */
-    GameObject getBestFood()
-    {
-        GameObject[] g = getNearbyFood();
-        if (g.Length == 0)
-            return null;
-        return g[Random.Range(0, g.Length - 1)];
-    }
-
 
     /*
     *	Llama al modulo de logica difusa para encontrar el area mas conveniente para encontrr comida
@@ -845,19 +583,5 @@ public class Prey : Agent
     private Vector3 searchForFood()
     {
         return GetComponent<PreySearchFood>().searchForFood(transform.position);
-    }
-
-    private bool hungry()
-    {
-        if (stamina < 85f || hp < 100)
-            return true;
-        return false;
-    }
-
-    private bool satisfied()
-    {
-        if (stamina < 100 || hp < 100)//TODO: Cambiar estos valores.
-            return false;
-        return true;
     }
 }

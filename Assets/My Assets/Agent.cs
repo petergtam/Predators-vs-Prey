@@ -21,11 +21,21 @@ namespace Assets.My_Assets
         public float lifetime;		//Tiempo de vida transcurridos en segundos 
         public bool isLeader = false;  //Indica si este agente es lider
         public bool isNeededRun = false;
-        public GameObject actualFood;
+        
 
         protected NavMeshAgent nav;
         protected GameObject leader;
-        protected float stoppingDistance;
+
+        /// <summary>
+        /// Indica a que distancia debe de deternerse el agente
+        /// </summary>
+        protected float stoppingDistance
+        {
+            get
+            {
+                return comRange * ((float)Random.Range(30, 50) / 100);
+            }
+        }
 
         public enum States
         {
@@ -65,7 +75,17 @@ namespace Assets.My_Assets
         /// <summary>
         /// Muere el agente
         /// </summary>
-        protected abstract void die();
+        protected abstract void Die();
+
+        /// <summary>
+        /// Funcion que inflige daño al enemigo
+        /// </summary>
+        protected abstract void BiteEnemy();
+
+        /// <summary>
+        /// Funcion de comer al enemigo
+        /// </summary>
+        protected abstract void EatEnemy();
 
         #region Estimulos
 
@@ -87,8 +107,8 @@ namespace Assets.My_Assets
 
             lstStimulus[0] = GetFearStimulus();
             lstStimulus[1] = GetLeaderShipStimulus();
-            lstStimulus[2] = this.isLeader == true ? GetHungryStimulus() : 0;
-            lstStimulus[3] = this.isLeader == true ? GetMatingStimulus() : 0;
+            lstStimulus[2] = isLeader ? GetHungryStimulus() : 0;
+            lstStimulus[3] = isLeader ? GetMatingStimulus() : 0;
 
             return lstStimulus;
         }
@@ -100,7 +120,7 @@ namespace Assets.My_Assets
         private double GetLeaderShipStimulus()
         {
             double leaderShipIndicator = 0;
-            var classType = this.GetType();
+            var classType = GetType();
 
             //Se obtiene la manada
             List<Agent> lstCharm = new List<Agent>();
@@ -114,7 +134,7 @@ namespace Assets.My_Assets
             }
 
             //Cuenta los lideres en la manada
-            int leaderCount = lstCharm.Count(x => x.isLeader == true);            
+            int leaderCount = lstCharm.Count(x => x.isLeader);            
             
             if (leaderCount != 1)
             {
@@ -130,7 +150,7 @@ namespace Assets.My_Assets
         private double GetFearStimulus()
         {
             double fearIndicator = 0;
-            var classType = this.GetType();
+            var classType = GetType();
 
             //Solo las presas tienen miedo.
             if (classType == typeof(Prey))
@@ -138,7 +158,7 @@ namespace Assets.My_Assets
                 List<Agent> lstCharm = GetCharm<Prey>();
                 List<Agent> lstPredator = GetCharm<Predator>();
 
-                fearIndicator = lstPredator.Count / lstCharm.Count;
+                fearIndicator = (double) lstPredator.Count / lstCharm.Count;
             }
             
             return fearIndicator;
@@ -150,8 +170,7 @@ namespace Assets.My_Assets
         /// <returns>Retorna el nivel de hambre</returns>
         private double GetHungryStimulus()
         {
-            double hungryIndicator = 0;
-            var classType = this.GetType();
+            var classType = GetType();
 
             //Se obtiene la manada
             List<Agent> lstCharm = new List<Agent>();
@@ -165,7 +184,7 @@ namespace Assets.My_Assets
             }
 
             //Se obtiene el promedio de stanmina
-            hungryIndicator = lstCharm.Average(x => x.stamina);
+            var hungryIndicator = lstCharm.Average(x => x.stamina);
 
             return (100 - hungryIndicator) / 100;
         }
@@ -176,7 +195,7 @@ namespace Assets.My_Assets
         /// <returns>Retorna nivel de apareamiento de la manada</returns>
         private double GetMatingStimulus()
         {
-            var classType = this.GetType();
+            var classType = GetType();
 
             //Se obtiene la manada
             List<Agent> lstCharm = new List<Agent>();
@@ -255,7 +274,7 @@ namespace Assets.My_Assets
             }
             if (hp <= 0 || lifetime >= maxLifeTime)
             {
-                die();
+                Die();
                 return false;
             }
             return true;
@@ -281,5 +300,36 @@ namespace Assets.My_Assets
                 LifeState = LifeEnum.Vejez;
             }
         }
+
+        #region Movimiento del agente
+        /// <summary>
+        /// Funcion que detiene al nav Agent
+        /// </summary>
+        protected void Stop()
+        {
+            nav.destination = transform.position;
+        }
+
+        /// <summary>
+        /// Regresa la distancia desde la pocion actual a el destino seleccionado
+        /// </summary>
+        /// <returns>Retorna distancia</returns>
+        protected float DistanceFromDestination()
+        {
+            return Vector3.Distance(transform.position, nav.destination);
+        }
+
+        /// <summary>
+        /// Indica si el agente se debe detener
+        /// </summary>
+        /// <param name="factor"></param>
+        /// <returns>Retorna un valor booleano si el agente de debe de detener</returns>
+        protected bool IsOnRangeToStop(float factor)
+        {
+            return (DistanceFromDestination() < stoppingDistance * factor);
+        }
+        #endregion
+
+        
     }
 }

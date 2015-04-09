@@ -5,6 +5,7 @@ using Random = UnityEngine.Random;
 
 public class Predator : Agent
 {
+    public GameObject actualFood;
     protected override void InitValue()
     {
         //Propiedades fijas
@@ -30,7 +31,6 @@ public class Predator : Agent
 
         //Fija los parametros iniciales en torno a la escala
         comRange = (int)(comRange * ((float)transform.localScale.x / 0.3));
-        this.stoppingDistance = travelStopDistance();
 
         //Inicializa el NavMeshAgent
         nav = GetComponent<NavMeshAgent>();
@@ -165,7 +165,7 @@ public class Predator : Agent
             {
                 state = States.Hunting;
                 order_hunt(gameObject);
-                stop();
+                Stop();
                 actualFood = getBestFood();
                 if (actualFood == null)
                 {
@@ -195,7 +195,7 @@ public class Predator : Agent
         }
 
         nav.destination = actualFood.transform.position;
-        if (distanceFromDestination() <= distanceToBite())
+        if (DistanceFromDestination() <= distanceToBite())
         {
             nav.destination = transform.position;
             transform.LookAt(actualFood.transform);
@@ -206,7 +206,7 @@ public class Predator : Agent
             }
             else
             {
-                biteEnemy();
+                BiteEnemy();
             }
         }
     }
@@ -220,7 +220,7 @@ public class Predator : Agent
             return;
         }
 
-        eatEnemy();
+        EatEnemy();
         if (actualFood.GetComponent<Prey>().flesh < 0)
         {
             this.GetComponent<DinasorsAnimationCorrector>().idle();
@@ -240,7 +240,6 @@ public class Predator : Agent
 
     void behavior_follower_following()
     {
-        nav.stoppingDistance = travelStopDistance();
         nav.destination = leader.transform.position;
         /*if( leader.GetComponent<Predator>().state != States.Following ){
             if( isOnRangeToStop(1.5f) ){
@@ -254,13 +253,13 @@ public class Predator : Agent
     {
         if (nav.velocity != Vector3.zero)
         {
-            stop();
+            Stop();
         }
     }
 
     void behavior_follower_reagruping()
     {
-        if (isOnRangeToStop(3f))
+        if (IsOnRangeToStop(3f))
         {
             /*stop();
             state = (int) States.Hunting;
@@ -278,7 +277,6 @@ public class Predator : Agent
             if (actualFood == null)
             {
                 state = States.Following;
-                nav.stoppingDistance = travelStopDistance();
                 ////Debug.Log ("No Food, nearby");
                 return;
             }
@@ -287,7 +285,7 @@ public class Predator : Agent
         nav.stoppingDistance = 0;
         //nav.stoppingDistance = distanceToBite();
         nav.destination = actualFood.transform.position;
-        if (distanceFromDestination() <= distanceToBite())
+        if (DistanceFromDestination() <= distanceToBite())
         {
 
             nav.destination = transform.position;
@@ -298,7 +296,7 @@ public class Predator : Agent
             }
             else
             {
-                biteEnemy();
+                BiteEnemy();
             }
         }
     }
@@ -308,12 +306,11 @@ public class Predator : Agent
         if (actualFood == null)
         {
             state = States.Following;
-            nav.stoppingDistance = travelStopDistance();
             this.GetComponent<DinasorsAnimationCorrector>().idle();
             return;
         }
 
-        eatEnemy();
+        EatEnemy();
         if (actualFood.GetComponent<Prey>().flesh < 0)
         {
             this.GetComponent<DinasorsAnimationCorrector>().idle();
@@ -323,7 +320,6 @@ public class Predator : Agent
         if (satisfied())
         {
             state = States.Following;
-            nav.stoppingDistance = travelStopDistance();
             this.GetComponent<DinasorsAnimationCorrector>().idle();
         }
     }
@@ -476,16 +472,6 @@ public class Predator : Agent
         return false;
     }
 
-    
-    /**
-     *	Regresa la distancia desde la pocion actual a el destino deseado
-     */
-    float distanceFromDestination()
-    {
-        return Vector3.Distance(transform.position, nav.destination);
-    }
-
-
     /*
      *	Regresa una pocicion aleatoria alrededor de la pocicion dada
      */
@@ -497,40 +483,34 @@ public class Predator : Agent
     }
 
 
-    float travelStopDistance()
-    {
-        return comRange * ((float)Random.Range(30, 50) / 100);
-    }
-
     bool isOnRangeToStop()
     {
-        return isOnRangeToStop(1f);
+        return IsOnRangeToStop(1f);
     }
 
-    bool isOnRangeToStop(float factor)
+    /// <summary>
+    /// Funcion que inflige daño al enemigo
+    /// </summary>
+    protected override void BiteEnemy()
     {
-        return (distanceFromDestination() < this.stoppingDistance * factor);
+        actualFood.GetComponent<Prey>().hp -= (this.attack / (1f / Time.deltaTime));
     }
 
-    /*
-     *	Funcion que detiene al nav Agent
-     */
-    private void stop()
+    /// <summary>
+    /// Funcion de comer al enemigo
+    /// </summary>
+    protected override void EatEnemy()
     {
-        nav.destination = transform.position;
-    }
-    
-    //Mueve las estadisticas del enemigo y del agente
-    void eatEnemy()
-    {
-        actualFood.GetComponent<Prey>().flesh -= (actualFood.GetComponent<Prey>().defense - this.attack) * Time.deltaTime;
+        actualFood.GetComponent<Prey>().flesh -= (this.attack - actualFood.GetComponent<Prey>().defense) * Time.deltaTime;
         if (this.stamina < 100f)
             this.stamina += (this.attack * Time.deltaTime) / 10;
         else
             this.hp += (this.attack * Time.deltaTime) / 10;
     }
 
-    protected override void die()
+    
+
+    protected override void Die()
     {
         state = States.Die;
         this.GetComponent<DinasorsAnimationCorrector>().die();
@@ -550,19 +530,8 @@ public class Predator : Agent
      */
     float distanceToBite()
     {
-        return ((nav.radius) * transform.localScale.x * 1.3f) +
-            ((actualFood.GetComponent<NavMeshAgent>().radius) * actualFood.transform.localScale.x * 1.3f);
+        return ((nav.radius) * transform.localScale.x * 1.3f) + ((actualFood.GetComponent<NavMeshAgent>().radius) * actualFood.transform.localScale.x * 1.3f);
     }
-
-
-    /**
-     * Funcion que inflige daño al enemigo
-     */
-    void biteEnemy()
-    {
-        actualFood.GetComponent<Prey>().hp -= (this.attack / (1f / Time.deltaTime));
-    }
-
 
 
 
