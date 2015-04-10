@@ -34,13 +34,10 @@ public class Plant : MonoBehaviour {
 		//Si no tiene Alimento, muere
 		if ( this.flesh <= 0 )
 			Destroy( gameObject );
+        
+        if (this.flesh <= maxFruit)
+            this.flesh += regenRange * Time.deltaTime; //TODO: Cambiar a funcion logistica
 
-		//Si esta viva y no esta en el maximo, creece
-	    if (hp > 0)
-	    {
-            if (this.flesh <= maxFruit)
-                this.flesh += regenRange * Time.deltaTime; //TODO: Cambiar a funcion logistica
-	    }
 	}
 
 	IEnumerator treeGrow(){

@@ -39,12 +39,14 @@ namespace Assets.My_Assets
 
         public enum States
         {
+            Initial,
             ChoosingLeader, 
+            ChoosedLeader,
             Searching, 
-            Following, 
             Moving, 
             Hunting, 
-            Eating, 
+            Eating,
+            Following, 
             Reproduce, 
             Hiding, 
             Waiting, 
@@ -91,10 +93,18 @@ namespace Assets.My_Assets
 
         public StimulusEnum SelectStimulu()
         {
-            double[] lstEstimulus = GetStimulus();
-            //TODO: Implementar red bayesiana
-
             return StimulusEnum.Hungry;
+            double[] lstEstimulus = GetStimulus();
+            if (lstEstimulus[1] > 0)
+            {
+                return StimulusEnum.LeaderShip;
+            }
+            else
+            {
+                return StimulusEnum.Hungry;
+            }
+
+            //TODO: Implementar red bayesiana
         }
 
         /// <summary>
@@ -119,7 +129,6 @@ namespace Assets.My_Assets
         /// <returns>Retorna 0 si no se necesita cambiar lider, 1 si se necesita cambiar</returns>
         private double GetLeaderShipStimulus()
         {
-            double leaderShipIndicator = 0;
             var classType = GetType();
 
             //Se obtiene la manada
@@ -134,11 +143,16 @@ namespace Assets.My_Assets
             }
 
             //Cuenta los lideres en la manada
-            int leaderCount = lstCharm.Count(x => x.isLeader);            
-            
+            int leaderCount = lstCharm.Count(x => x.isLeader && x.state != States.Die);
+
+            double leaderShipIndicator;
             if (leaderCount != 1)
             {
                 leaderShipIndicator = 1;
+            }
+            else
+            {
+                leaderShipIndicator = 0;
             }
             return leaderShipIndicator;
         }
