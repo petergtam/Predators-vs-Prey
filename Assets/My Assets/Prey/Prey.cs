@@ -7,39 +7,11 @@ using Random = UnityEngine.Random;
 
 public class Prey : Agent
 {
-    public Plant actualFood;
-    protected override void InitValue()
-    {
-        //Propiedades fijas
-        hp = 100f;
-        stamina = 100f;
-        comRange = 10;
-        lifetime = 0;	
-        isNeededRun = false;
-
-        //Propiedades variables
-        flesh = Random.Range(300, 700);
-        speed = Random.Range(6, 10);
-        maxLifeTime = Random.Range(540, 720); //De 9 a 12 minutos
-        attack = Random.Range(6, 12);
-        defense = Random.Range(0, 5);
-
-        state = States.ChoosingLeader;
-    }
-
-    // Use this for initialization
     void Start()
     {
         InitValue();
 
-        //Fija los parametros iniciales en torno a la escala
-        comRange = (int)(comRange * ((float)transform.localScale.x / 0.3));
-
-        //Inicializa el NavMeshAgent
-        nav = GetComponent<NavMeshAgent>();
-        nav.speed = (float)((speed / 3.0) * ((stamina < 50 ? 50 : stamina) / 100.0));
-        if (isNeededRun)
-            nav.speed = (float)(speed * ((stamina < 50 ? 50 : stamina) / 100.0));
+        state = States.ChoosingLeader;
 
         //Si no cuenta con eleccion de lider, el es el lider
         if (GetComponent<PredatorLeaderChoosing>() == null)
@@ -55,28 +27,7 @@ public class Prey : Agent
         if (!Metabolism())
             return;
 
-        if (isNeededRun)
-        {//TODO: Nunca cambia entre correr y caminar las presas
-            nav.speed = (float)(speed * ((stamina < 50 ? 50 : stamina) / 100.0));
-        }
-        else
-            nav.speed = (float)((speed / 3.0) * ((stamina < 50 ? 50 : stamina) / 100.0));
-
-        
-
-        if (state == States.ChoosedLeader)
-        {
-            if (isMyLeader(gameObject))
-            {
-                isLeader = true;
-                state = States.Searching;
-            }
-            else
-            {
-                isLeader = false;
-                state = States.Waiting;
-            }
-        }
+        nav.speed = Velocidad(isNeededRun);
 
         StimulusEnum stimulus = SelectStimulu();
         switch (stimulus)
@@ -153,7 +104,7 @@ public class Prey : Agent
                 }
                 else
                 {
-                    if (DistanceFromDestination() <= distanceToBite())
+                    if (DistanceFromDestination() <= DistanceToBite(true))
                     {
                         Stop();
                         //Volteo a ver a la planta
@@ -166,7 +117,7 @@ public class Prey : Agent
                         }
                         else
                         {
-                            BiteEnemy();
+                            BiteEnemy(true);
                         }
                     }
                 }
@@ -180,7 +131,7 @@ public class Prey : Agent
                 }
                 else
                 {
-                    EatEnemy();
+                    EatEnemy(true);
 
                     if (actualFood.GetComponent<Plant>().flesh < 0)
                     {
@@ -220,7 +171,7 @@ public class Prey : Agent
                 }
                 else
                 {
-                    if (DistanceFromDestination() <= distanceToBite())
+                    if (DistanceFromDestination() <= DistanceToBite(true))
                     {
                         Stop();
 
@@ -233,7 +184,7 @@ public class Prey : Agent
                         }
                         else
                         {
-                            BiteEnemy();
+                            BiteEnemy(true);
                         }
                     }
                 }
@@ -247,7 +198,7 @@ public class Prey : Agent
                 }
                 else
                 {
-                    EatEnemy();
+                    EatEnemy(true);
                     if (actualFood.GetComponent<Plant>().flesh < 0)
                     {
                         GetComponent<DinasorsAnimationCorrector>().idle();
@@ -270,7 +221,6 @@ public class Prey : Agent
                 GetComponent<PreyLeaderChoosing>().choose();
             }
         }
-
     }
 
     private void behavior_run()
@@ -288,10 +238,6 @@ public class Prey : Agent
         //Born a new child
         throw new NotImplementedException();
     }
-
-
-
-    
 
     #region Ordenes del lider
     void order_followMe(GameObject l)
@@ -330,9 +276,9 @@ public class Prey : Agent
     {
         if (state != States.Following && 0 < hp)
         {
-            if (isMyLeader(l))
+            if (IsMyLeader(l))
             {
-                if (!isMe(leader))
+                if (!IsMe(leader))
                 {
                     state = States.Following;
                     order_followMe(l);	//Reply the message to others
@@ -345,9 +291,9 @@ public class Prey : Agent
     {
         if (state != States.Waiting && 0 < hp)
         {
-            if (isMyLeader(l))
+            if (IsMyLeader(l))
             {
-                if (!isMe(leader))
+                if (!IsMe(leader))
                 {
                     state = States.Waiting;
                     order_stop(l);	//Reply the message to others
@@ -360,9 +306,9 @@ public class Prey : Agent
     {
         if (state != States.Reagruping && 0 < hp)
         {
-            if (isMyLeader(l))
+            if (IsMyLeader(l))
             {
-                if (!isMe(leader))
+                if (!IsMe(leader))
                 {
                     state = States.Reagruping;
                     nav.destination = Dispersal(l.transform.position);
@@ -376,9 +322,9 @@ public class Prey : Agent
     {
         if (state != States.Hunting && 0 < hp)
         {
-            if (isMyLeader(l))
+            if (IsMyLeader(l))
             {
-                if (!isMe(leader))
+                if (!IsMe(leader))
                 {
                     state = States.Hunting;
                     nav.destination = l.GetComponent<NavMeshAgent>().destination;
@@ -392,9 +338,9 @@ public class Prey : Agent
     {
         if (leader != null && 0 < hp)
         {
-            if (isMyLeader(l))
+            if (IsMyLeader(l))
             {
-                if (!isMe(leader))
+                if (!IsMe(leader))
                 {
                     state = States.Hiding;
                     leader = null;
@@ -411,26 +357,12 @@ public class Prey : Agent
 
     }
     #endregion
-    /*
-     * Funcion para enviar a todos los objetos cercanos
-     * string Messaage: Funcion que sera ejecutada en los objetos encontrados
-     * object obj: Parametros para enviar a esa funcion
-     */
-    void BroadCast(string message, object obj)
-    {
-        List<Agent> lstCharm = GetCharm<Prey>();
-        foreach (var e in lstCharm)
-        {
-            if (!isMe(e.gameObject))
-            { 
-                 e.SendMessage(message, (GameObject)obj);
-            }
-        }
-    }
 
-    /*
-     * Retorna la capacidad de liderazgo de la unidad
-     */
+    #region Liderazgo
+    /// <summary>
+    /// Retorna la capacidad de liderazgo de la unidad
+    /// </summary>
+    /// <returns>Valor de liderazgo</returns>
     public float getLeadershipStat()
     {
         return
@@ -440,97 +372,36 @@ public class Prey : Agent
                 ((this.lifetime * 2) / 10000);
     }
 
-    /**
-     *	Fijar el objeto lider
-     */
+    /// <summary>
+    /// Fijar el objeto lider
+    /// </summary>
+    /// <param name="l">Lider del objeto</param>
     public void setLeader(GameObject l)
     {
         leader = l;
         nav.avoidancePriority = 1;
-        state = States.ChoosedLeader;
-    }
 
-
-    //Retorna si el gameobject enviado es igual a la entidad actual
-    bool isMe(GameObject g)
-    {
-        if (g.GetInstanceID() == gameObject.GetInstanceID())
-            return true;
-        return false;
-    }
-
-    //Retorna si el gameobject enviado es igual al lider de la unidad actual
-    bool isMyLeader(GameObject l)
-    {
-        if (l.GetInstanceID() == leader.GetInstanceID())
-            return true;
-        return false;
-    }
-
-    /*
-     *	Regresa una pocicion aleatoria alrededor de la pocicion dada
-     */
-    Vector3 Dispersal(Vector3 pos)
-    {
-        pos.x = pos.x + (((float)Random.Range(-50, 50) / 100) * this.comRange);
-        pos.z = pos.z + (((float)Random.Range(-50, 50) / 100) * this.comRange);
-        return pos;
-    }
-
-    /// <summary>
-    /// Funcion de comer al enemigo
-    /// </summary>
-    protected override void EatEnemy()
-    {
-        actualFood.GetComponent<Plant>().flesh -= this.attack * Time.deltaTime;
-        if (this.stamina < 100f)
-            this.stamina += (this.attack * Time.deltaTime) / 10;
-        else
-            this.hp += (this.attack / Time.deltaTime) / 10; //Time.deltaTime Es el tiempo desde el ultimo frame
-    }
-
-    /// <summary>
-    /// Funcion que inflige daño al enemigo
-    /// </summary>
-    protected override void BiteEnemy()
-    {
-        actualFood.GetComponent<Plant>().hp -= this.attack / (1f / Time.deltaTime);
-    }
-
-
-    protected override void Die()
-    {
-        state = States.Die;
-        GetComponent<DinasorsAnimationCorrector>().die();
-        gameObject.GetComponent<PreyNeuronalChoose>().enabled = false;
-        defense = 0;
-        if (isMyLeader(gameObject) || isLeader == true)
+        if (IsMyLeader(gameObject))
         {
-            Destroy(gameObject.transform.Find("leaderLigth").gameObject);
+            isLeader = true;
+            state = States.Searching;
+        }
+        else
+        {
+            isLeader = false;
+            state = States.Waiting;
         }
     }
+    #endregion
 
-
-
-
-    /**
-     * Distancia Optima para atacar al enemigo actual
-     */
-    float distanceToBite()//TODO:Ver exactamente que hace
-    {
-        return ((nav.radius) * transform.localScale.x * 1.3f) + ((actualFood.GetComponent<MeshRenderer>().bounds.size.x) * 1.3f);
-    }
-
-
-    
-    
+    #region Buscar comida
     /// <summary>
     /// Retorna la mejor planta disponible
     /// </summary>
     /// <returns>Retorna la mejor planta disponible</returns>
-    Plant getBestFood()
+    GameObject getBestFood()
     {
-        List<Plant> lstFood = getNearbyFood();
+        List<GameObject> lstFood = getNearbyFood();
         if (lstFood.Count == 0)
             return null;
         return lstFood[Random.Range(0,lstFood.Count-1)];
@@ -540,9 +411,9 @@ public class Prey : Agent
     /// Obtiene los objetos "COMIDA", cercanos a la posicion del objeto
     /// </summary>
     /// <returns>Retorna la lista de comida</returns>
-    protected List<Plant> getNearbyFood()
+    protected List<GameObject> getNearbyFood()
     {
-        List<Plant> lstFood = new List<Plant>();
+        List<GameObject> lstFood = new List<GameObject>();
 
         Collider[] hitColliders = Physics.OverlapSphere(transform.position, comRange * 2.5f);
         foreach (Collider e in hitColliders)
@@ -550,17 +421,19 @@ public class Prey : Agent
             Plant oPlant = e.GetComponent<Plant>();
             if (oPlant != null)
             {
-                lstFood.Add(oPlant);
+                lstFood.Add(e.gameObject);
             }
         }
         return lstFood;
     }
 
-    /*
-    *	Llama al modulo de logica difusa para encontrar el area mas conveniente para encontrr comida
-    */
+    /// <summary>
+    /// Llama al modulo de logica difusa para encontrar el area mas conveniente para encontrr comida
+    /// </summary>
+    /// <returns>Regresa ruta de la comida</returns>
     private Vector3 searchForFood()
     {
         return GetComponent<PreySearchFood>().searchForFood(transform.position);
     }
+    #endregion
 }

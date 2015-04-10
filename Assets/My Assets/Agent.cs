@@ -4,63 +4,8 @@ using UnityEngine;
 
 namespace Assets.My_Assets
 {
-    public abstract class Agent : MonoBehaviour
+    public class Agent : DinoObject
     {
-        public float hp;			//Salud de la entidad
-        public int speed; 			//Velocidad de la entidad
-        public int comRange;		//Rango de comunicacion
-        public double stamina;		//Resistencia (nesesaria para correr etc....)
-        public float maxLifeTime;   //Tiempo de vida en segundos
-        public float attack;		//Daño que realiza la entidad
-        public float flesh;         //Nutricion aportada a quien se alimente de la entidad 
-        public float defense;       //Defensa de la entidad.
-
-        public States state;
-        public LifeEnum LifeState;
-
-        public float lifetime;		//Tiempo de vida transcurridos en segundos 
-        public bool isLeader = false;  //Indica si este agente es lider
-        public bool isNeededRun = false;
-        
-
-        protected NavMeshAgent nav;
-        protected GameObject leader;
-
-        /// <summary>
-        /// Indica a que distancia debe de deternerse el agente
-        /// </summary>
-        protected float stoppingDistance
-        {
-            get
-            {
-                return comRange * ((float)Random.Range(30, 50) / 100);
-            }
-        }
-
-        public enum States
-        {
-            Initial,
-            ChoosingLeader, 
-            ChoosedLeader,
-            Searching, 
-            Moving, 
-            Hunting, 
-            Eating,
-            Following, 
-            Reproduce, 
-            Hiding, 
-            Waiting, 
-            Reagruping, 
-            Die
-        };
-
-        public enum LifeEnum
-        { 
-            Joven,
-            Adulto,
-            Vejez
-        }
-
         public enum StimulusEnum
         {
             LeaderShip,
@@ -69,28 +14,7 @@ namespace Assets.My_Assets
             Mating
         }
 
-        /// <summary>
-        /// Inicializa los valores del agente.
-        /// </summary>
-        protected abstract void InitValue();
-
-        /// <summary>
-        /// Muere el agente
-        /// </summary>
-        protected abstract void Die();
-
-        /// <summary>
-        /// Funcion que inflige daño al enemigo
-        /// </summary>
-        protected abstract void BiteEnemy();
-
-        /// <summary>
-        /// Funcion de comer al enemigo
-        /// </summary>
-        protected abstract void EatEnemy();
-
         #region Estimulos
-
         public StimulusEnum SelectStimulu()
         {
             return StimulusEnum.Hungry;
@@ -129,21 +53,11 @@ namespace Assets.My_Assets
         /// <returns>Retorna 0 si no se necesita cambiar lider, 1 si se necesita cambiar</returns>
         private double GetLeaderShipStimulus()
         {
-            var classType = GetType();
-
             //Se obtiene la manada
-            List<Agent> lstCharm = new List<Agent>();
-            if (classType == typeof(Predator))
-            {
-                lstCharm = GetCharm<Predator>();
-            }
-            else if (classType == typeof(Prey))
-            {
-                lstCharm = GetCharm<Prey>();
-            }
+            List<Agent> lstCharm = GetHerd();
 
             //Cuenta los lideres en la manada
-            int leaderCount = lstCharm.Count(x => x.isLeader && x.state != States.Die);
+            int leaderCount = lstCharm.Count(x => x.isLeader && x.state != States.Die); ///TODO:Poner rango de vision de la manada
 
             double leaderShipIndicator;
             if (leaderCount != 1)
@@ -169,8 +83,8 @@ namespace Assets.My_Assets
             //Solo las presas tienen miedo.
             if (classType == typeof(Prey))
             {
-                List<Agent> lstCharm = GetCharm<Prey>();
-                List<Agent> lstPredator = GetCharm<Predator>();
+                List<Agent> lstCharm = GetHerd();
+                List<Agent> lstPredator = GetColliders<Predator>();
 
                 fearIndicator = (double) lstPredator.Count / lstCharm.Count;
             }
@@ -184,18 +98,8 @@ namespace Assets.My_Assets
         /// <returns>Retorna el nivel de hambre</returns>
         private double GetHungryStimulus()
         {
-            var classType = GetType();
-
             //Se obtiene la manada
-            List<Agent> lstCharm = new List<Agent>();
-            if (classType == typeof(Predator))
-            {
-                lstCharm = GetCharm<Predator>();
-            }
-            else if (classType == typeof(Prey))
-            {
-                lstCharm = GetCharm<Prey>();
-            }
+            List<Agent> lstCharm = GetHerd();
 
             //Se obtiene el promedio de stanmina
             var hungryIndicator = lstCharm.Average(x => x.stamina);
@@ -209,18 +113,8 @@ namespace Assets.My_Assets
         /// <returns>Retorna nivel de apareamiento de la manada</returns>
         private double GetMatingStimulus()
         {
-            var classType = GetType();
-
             //Se obtiene la manada
-            List<Agent> lstCharm = new List<Agent>();
-            if (classType == typeof(Predator))
-            {
-                lstCharm = GetCharm<Predator>();
-            }
-            else if (classType == typeof(Prey))
-            {
-                lstCharm = GetCharm<Prey>();
-            }
+            List<Agent> lstCharm = GetHerd();
 
             //Se obtiene la razon de los agentes que estan en edad de procrear entre el total de la manada
             double matingIndicator = (double) lstCharm.Count(x => x.LifeState == LifeEnum.Adulto) / lstCharm.Count;
@@ -228,122 +122,52 @@ namespace Assets.My_Assets
             return matingIndicator;
         }
         #endregion
-        
+
         /// <summary>
-        /// Obtiene la manada
+        /// Obtiene los objetos en el rango del agente
         /// </summary>
-        /// <typeparam name="T">Tipo de la manada</typeparam>
-        /// <returns>Retorna la lista de integrantes de la manada</returns>
-        public List<Agent> GetCharm<T>() where T : Agent
+        /// <typeparam name="T">Tipo del objeto a buscar</typeparam>
+        /// <returns>Retorna la lista de objetos que colicionan</returns>
+        public List<Agent> GetColliders<T>() where T : Agent
         {
-            List<Agent> lstCharm = new List<Agent>();
+            List<Agent> lstColliders = new List<Agent>();
 
             //Si el agente actual pertenece a la manada lo agrega
             var classType = GetType();
-            if (classType == typeof (T))
+            if (classType == typeof(T))
             {
-                lstCharm.Add(this);
+                lstColliders.Add(this);
             }
 
             Collider[] hitColliders = Physics.OverlapSphere(transform.position, comRange);
             foreach (Collider e in hitColliders)
             {
-                T oAgent = e.GetComponent<T>();    
+                T oAgent = e.GetComponent<T>();
                 if (oAgent != null)
                 {
-                    lstCharm.Add(oAgent);
+                    lstColliders.Add(oAgent);
                 }
             }
-            return lstCharm;
+            return lstColliders;
         }
 
         /// <summary>
-        /// Realiza las funciones biologicas de consumir energia del individuo
+        /// Obtiene la manada
         /// </summary>
-        /// <returns>Retorna si el individuo esta vivo</returns>
-        protected bool Metabolism()
+        /// <returns>Retorna la lista de integrantes de la manada</returns>
+        public List<Agent> GetHerd()
         {
-            UpdateLifeTime();
+            List<Agent> lstHerd = new List<Agent>();
 
-            float factor = 1f;
-            if (isNeededRun)
-                factor *= 2f;
-
-            if (state == States.Die)
+            foreach (var e in herd)
             {
-                if (flesh <= 0)
-                    Destroy(gameObject);
-                return false;
-            }
-            if (0 < stamina)
-            {
-                stamina -= Time.deltaTime * factor * (1 / 10f); //Cada 10 segundo gasta uno de stamina
-            }
-            if (stamina <= 0)
-            {
-                if (0 < hp)
+                Agent oAgent = e.GetComponent<Agent>();
+                if (oAgent != null)
                 {
-                    hp -= Time.deltaTime * factor * (1 / 15f); // Cada 15 segundos gasta uno de hp si no tiene stamina
+                    lstHerd.Add(oAgent);
                 }
             }
-            if (hp <= 0 || lifetime >= maxLifeTime)
-            {
-                Die();
-                return false;
-            }
-            return true;
+            return lstHerd;
         }
-        
-        /// <summary>
-        /// Actualiza el tiempo de vida y el estado del agente
-        /// </summary>
-        private void UpdateLifeTime()
-        {
-            lifetime += Time.deltaTime;
-    
-            if (lifetime < 240)
-            {
-                LifeState = LifeEnum.Joven;
-            }
-            else if (lifetime < 480)
-            {
-                LifeState = LifeEnum.Adulto;
-            }
-            else
-            {
-                LifeState = LifeEnum.Vejez;
-            }
-        }
-
-        #region Movimiento del agente
-        /// <summary>
-        /// Funcion que detiene al nav Agent
-        /// </summary>
-        protected void Stop()
-        {
-            nav.destination = transform.position;
-        }
-
-        /// <summary>
-        /// Regresa la distancia desde la pocion actual a el destino seleccionado
-        /// </summary>
-        /// <returns>Retorna distancia</returns>
-        protected float DistanceFromDestination()
-        {
-            return Vector3.Distance(transform.position, nav.destination);
-        }
-
-        /// <summary>
-        /// Indica si el agente se debe detener
-        /// </summary>
-        /// <param name="factor"></param>
-        /// <returns>Retorna un valor booleano si el agente de debe de detener</returns>
-        protected bool IsOnRangeToStop(float factor)
-        {
-            return (DistanceFromDestination() < stoppingDistance * factor);
-        }
-        #endregion
-
-        
     }
 }
