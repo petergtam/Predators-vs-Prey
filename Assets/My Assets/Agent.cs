@@ -152,6 +152,32 @@ namespace Assets.My_Assets
         }
 
         /// <summary>
+        /// Realiza las funciones biologicas de consumir energia del individuo
+        /// </summary>
+        /// <returns>Retorna si el individuo esta vivo</returns>
+        protected new bool Metabolism()
+        {
+            bool metabolism = base.Metabolism();
+
+            //Cambiar tamaño
+            const float scale = 0.5f;
+            if (metabolism)
+            {
+                float newScale = scale;
+                if (LifeState == LifeEnum.Joven)
+                {
+                    newScale = scale*.7f;
+                }
+                else if (LifeState == LifeEnum.Vejez)
+                {
+                    newScale = scale*1.5f;
+                }
+                gameObject.transform.localScale = new Vector3(newScale, newScale, newScale);
+            }
+            return metabolism;
+        }
+
+        /// <summary>
         /// Obtiene la manada
         /// </summary>
         /// <returns>Retorna la lista de integrantes de la manada</returns>

@@ -361,11 +361,11 @@ namespace Assets.My_Assets
         {
             if (isPrey)
             {
-                actualFood.GetComponent<Plant>().hp -= attack / (1f / Time.deltaTime);
+                actualFood.GetComponent<Plant>().hp -= attack * Time.deltaTime * (1f / 2f);
             }
             else
             {
-                actualFood.GetComponent<Prey>().hp -= (attack / (1f / Time.deltaTime));
+                actualFood.GetComponent<Prey>().hp -= (attack - actualFood.GetComponent<Prey>().defense) * Time.deltaTime * (1f / 2f);
             }
         }
 
@@ -381,19 +381,19 @@ namespace Assets.My_Assets
                 {
                     stamina += (attack * Time.deltaTime) / 10;
                 }
-                else
+                else if (hp < 100)
                 {
-                    hp += (attack / Time.deltaTime) / 10;
+                    hp += (attack * Time.deltaTime) / 10;
                 }
             }
             else
             {
-                actualFood.GetComponent<Prey>().flesh -= (attack - actualFood.GetComponent<Prey>().defense) * Time.deltaTime;
+                actualFood.GetComponent<Prey>().flesh -= attack * Time.deltaTime;
                 if (stamina < 100f)
                 {
                     stamina += (attack * Time.deltaTime) / 10;
                 }
-                else
+                else if (hp < 100)
                 {
                     hp += (attack * Time.deltaTime) / 10;
                 }
