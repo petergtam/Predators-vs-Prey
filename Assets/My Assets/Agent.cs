@@ -22,7 +22,7 @@ namespace Assets.My_Assets
             if (this.name == "Pedro")
             {
                 double[] valor = GetStimulus();
-                Debug.Log(valor);
+                Debug.Log(valor);/*
                 PlotManager.Instance.PlotCreate("Stimulus", -1, 1, Color.blue, new Vector2(0, 0));
                 PlotManager.Instance.PlotCreate("Fear",Color.black,"Stimulus");
                 PlotManager.Instance.PlotAdd("Fear", (float) valor[0]);
@@ -31,7 +31,7 @@ namespace Assets.My_Assets
                 PlotManager.Instance.PlotCreate("Hunger", Color.red, "Stimulus");
                 PlotManager.Instance.PlotAdd("Hunger", (float)valor[2]);
                 PlotManager.Instance.PlotCreate("Mating", Color.blue, "Stimulus");
-                PlotManager.Instance.PlotAdd("Mating", (float)valor[3]); 
+                PlotManager.Instance.PlotAdd("Mating", (float)valor[3]); */
             }
             return StimulusEnum.Hungry;
             double[] lstEstimulus = GetStimulus();
