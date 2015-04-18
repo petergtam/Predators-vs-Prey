@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace Assets.My_Assets
@@ -15,8 +16,17 @@ namespace Assets.My_Assets
         }
 
         #region Estimulos
+
         public StimulusEnum SelectStimulu()
         {
+            if (this.name == "Peter")
+            {
+                float valor = (float) GetStimulus()[2];
+                Debug.Log(valor);
+                PlotManager.Instance.PlotCreate("Hunger", -1, 1, Color.blue, new Vector2(0, 0));
+                PlotManager.Instance.PlotAdd("Hunger", valor);
+                //Debug.Log(string.Join(", ", GetStimulus().Select(x => x.ToString()).ToArray()));   
+            }
             return StimulusEnum.Hungry;
             double[] lstEstimulus = GetStimulus();
             if (lstEstimulus[1] > 0)
@@ -57,7 +67,8 @@ namespace Assets.My_Assets
             List<Agent> lstCharm = GetHerd();
 
             //Cuenta los lideres en la manada
-            int leaderCount = lstCharm.Count(x => x.isLeader && x.state != States.Die); ///TODO:Poner rango de vision de la manada
+            int leaderCount = lstCharm.Count(x => x.isLeader && x.state != States.Die);
+                ///TODO:Poner rango de vision de la manada
 
             double leaderShipIndicator;
             if (leaderCount != 1)
@@ -81,14 +92,14 @@ namespace Assets.My_Assets
             var classType = GetType();
 
             //Solo las presas tienen miedo.
-            if (classType == typeof(Prey))
+            if (classType == typeof (Prey))
             {
                 List<Agent> lstCharm = GetHerd();
                 List<Agent> lstPredator = GetColliders<Predator>();
 
-                fearIndicator = (double) lstPredator.Count / lstCharm.Count;
+                fearIndicator = (double) lstPredator.Count/lstCharm.Count;
             }
-            
+
             return fearIndicator;
         }
 
@@ -103,8 +114,9 @@ namespace Assets.My_Assets
 
             //Se obtiene el promedio de stanmina
             var hungryIndicator = lstCharm.Average(x => x.stamina);
-
-            return (100 - hungryIndicator) / 100;
+            if (hungryIndicator < 100)//satisfecho!
+                return (100 - hungryIndicator)/100;
+            return 0;
         }
 
         /// <summary>
@@ -117,10 +129,11 @@ namespace Assets.My_Assets
             List<Agent> lstCharm = GetHerd();
 
             //Se obtiene la razon de los agentes que estan en edad de procrear entre el total de la manada
-            double matingIndicator = (double) lstCharm.Count(x => x.LifeState == LifeEnum.Adulto) / lstCharm.Count;
+            double matingIndicator = (double) lstCharm.Count(x => x.LifeState == LifeEnum.Adulto)/lstCharm.Count;
 
             return matingIndicator;
         }
+
         #endregion
 
         /// <summary>
@@ -134,7 +147,7 @@ namespace Assets.My_Assets
 
             //Si el agente actual pertenece a la manada lo agrega
             var classType = GetType();
-            if (classType == typeof(T))
+            if (classType == typeof (T))
             {
                 lstColliders.Add(this);
             }
@@ -184,6 +197,10 @@ namespace Assets.My_Assets
         public List<Agent> GetHerd()
         {
             List<Agent> lstHerd = new List<Agent>();
+            if (!lstHerd.Contains(this))
+            {
+                lstHerd.Add(this);
+            }
 
             foreach (var e in herd)
             {

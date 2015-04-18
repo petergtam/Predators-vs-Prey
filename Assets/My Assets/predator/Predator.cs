@@ -5,6 +5,10 @@ using Random = UnityEngine.Random;
 
 public class Predator : Agent
 {
+    private TextMesh textMesh;
+    public static string[] names = { "Dr Mario", "Dr Andres", "Dr Mellado", "Dr Felix", "Dr Raul", "Ing. Elvia", "Dr "};
+    public static int indice = 0;
+
     void Start()
     {
         InitValue();
@@ -18,6 +22,14 @@ public class Predator : Agent
         {
             GetComponent<PredatorLeaderChoosing>().choose();
         }
+
+        name = Predator.names[indice];
+        indice++;   
+        textMesh = (TextMesh)gameObject.AddComponent("TextMesh");
+        var f = (Font)Resources.LoadAssetAtPath("Assets/My Assets/Fonts/coolvetica.ttf", typeof(Font));
+        textMesh.font = f;
+        textMesh.renderer.sharedMaterial = f.material;
+        textMesh.text = name;
     }
 	
     void Update()

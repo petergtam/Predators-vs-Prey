@@ -7,6 +7,11 @@ using Random = UnityEngine.Random;
 
 public class Prey : Agent
 {
+    private TextMesh textMesh;
+
+    public static string[] names = { "Gibran", "Pedro", "Celeste", "Lea", "Ivan", "Victor", "Alberto", "Hector", "Mayra", "Orlando", "Mario", "Ruben", "Armando", "Edith", "Arturo", "Jairo"};
+    public static int indice = 0;
+
     void Start()
     {
         InitValue();
@@ -20,6 +25,16 @@ public class Prey : Agent
         {
             GetComponent<PredatorLeaderChoosing>().choose();
         }
+
+        name = Prey.names[indice];
+        indice++;
+
+        textMesh = (TextMesh)gameObject.AddComponent("TextMesh");
+        var f = (Font)Resources.LoadAssetAtPath("Assets/My Assets/Fonts/coolvetica.ttf", typeof(Font));
+        textMesh.font = f;
+        textMesh.renderer.sharedMaterial = f.material;
+        textMesh.text = name;
+
     }
 
     private void Update()
