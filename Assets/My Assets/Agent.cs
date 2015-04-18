@@ -19,13 +19,19 @@ namespace Assets.My_Assets
 
         public StimulusEnum SelectStimulu()
         {
-            if (this.name == "Peter")
+            if (this.name == "Pedro")
             {
-                float valor = (float) GetStimulus()[2];
+                double[] valor = GetStimulus();
                 Debug.Log(valor);
-                PlotManager.Instance.PlotCreate("Hunger", -1, 1, Color.blue, new Vector2(0, 0));
-                PlotManager.Instance.PlotAdd("Hunger", valor);
-                //Debug.Log(string.Join(", ", GetStimulus().Select(x => x.ToString()).ToArray()));   
+                PlotManager.Instance.PlotCreate("Stimulus", -1, 1, Color.blue, new Vector2(0, 0));
+                PlotManager.Instance.PlotCreate("Fear",Color.black,"Stimulus");
+                PlotManager.Instance.PlotAdd("Fear", (float) valor[0]);
+                PlotManager.Instance.PlotCreate("Lider", Color.green, "Stimulus");
+                PlotManager.Instance.PlotAdd("Lider", (float)valor[1]);
+                PlotManager.Instance.PlotCreate("Hunger", Color.red, "Stimulus");
+                PlotManager.Instance.PlotAdd("Hunger", (float)valor[2]);
+                PlotManager.Instance.PlotCreate("Mating", Color.blue, "Stimulus");
+                PlotManager.Instance.PlotAdd("Mating", (float)valor[3]); 
             }
             return StimulusEnum.Hungry;
             double[] lstEstimulus = GetStimulus();

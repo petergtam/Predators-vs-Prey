@@ -8,6 +8,8 @@ namespace Assets.My_Assets
     public class DinoObject : MonoBehaviour
     {
         #region Propiedades
+
+        public string name;
         /// <summary>
         /// Salud de la entidad
         /// </summary>
