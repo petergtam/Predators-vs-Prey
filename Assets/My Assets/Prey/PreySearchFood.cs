@@ -16,21 +16,21 @@ public class PreySearchFood : MonoBehaviour
 
         return searchAStar(actualPosition);
 
-        GameObject n = nodes.getNeartestNode(actualPosition);	//Obtiene el nodo actual
-        GameObject[] neighbors = nodes.getNeighbors(n);					//obtiene los nodos vecinos
-        double[,] nodesData = formatData(n, neighbors);				//Fomatea la data para enviarlo al fuzzy Logic
-        double[] ret = fLogic.calculate(nodesData);				//Calcula el fuzzy value de los nodos
-
-        //Selecionar el que tiene un mayor fuzzy value
-        int max = 0;
-        for (int i = 0; i < ret.Length; i++)
-            if (ret[max] <= ret[i])
-                max = i;
-
-        //Si fue el ultimo, entonses la pocicion actual es la mejor
-        if (max == ret.Length - 1)
-            return actualPosition;
-        return neighbors[max].transform.position;
+//        GameObject n = nodes.getNeartestNode(actualPosition);	//Obtiene el nodo actual
+//        GameObject[] neighbors = nodes.getNeighbors(n);					//obtiene los nodos vecinos
+//        double[,] nodesData = formatData(n, neighbors);				//Fomatea la data para enviarlo al fuzzy Logic
+//        double[] ret = fLogic.calculate(nodesData);				//Calcula el fuzzy value de los nodos
+//
+//        //Selecionar el que tiene un mayor fuzzy value
+//        int max = 0;
+//        for (int i = 0; i < ret.Length; i++)
+//            if (ret[max] <= ret[i])
+//                max = i;
+//
+//        //Si fue el ultimo, entonses la pocicion actual es la mejor
+//        if (max == ret.Length - 1)
+//            return actualPosition;
+//        return neighbors[max].transform.position;
     }
 
     private void setNodesController()

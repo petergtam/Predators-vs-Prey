@@ -10,7 +10,7 @@ public class PathNode : MonoBehaviour {
 	private float fertility;
 	private float linkVisibleDuration = 40f;
 	private TextMesh textMesh;
-	private Light light;
+	private Light lights;
 	private int maxTrees;
 	
 
@@ -40,9 +40,9 @@ public class PathNode : MonoBehaviour {
 		textMesh.text = "Comida = " + c;
 
 		//Inicializa el objeto luz y le da color
-		light = ((Light)transform.Find ("Capsule").gameObject.GetComponent ("Light"));
-		light.color = getNodeColor( c );
-		light.intensity = 7;
+		lights = ((Light)transform.Find ("Capsule").gameObject.GetComponent ("Light"));
+		lights.color = getNodeColor( c );
+		lights.intensity = 7;
 	}
 	
 	// Update is called once per frame
@@ -50,7 +50,7 @@ public class PathNode : MonoBehaviour {
 		int c = getPlants ();
 
 		//Cambia el color de la luz
-		light.color = getNodeColor( c );
+		lights.color = getNodeColor( c );
 
 		//Cambia el texto y lo gira hacia la camara
 
