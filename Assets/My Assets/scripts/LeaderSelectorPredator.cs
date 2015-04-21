@@ -16,83 +16,83 @@ using System.Text;
 
 namespace Assets.My_Assets.scripts 
 {
-	public class LeaderSelectorPrey : MonoBehaviour
+	public class LeaderSelectorPredator : MonoBehaviour
 	{
 		private Dictionary<String,FuzzyElement> elements;
-		public LeaderSelectorPrey ()
+		public LeaderSelectorPredator ()
 		{
 			elements = new Dictionary<string, FuzzyElement>();
-
+			
 			FuzzyElement salud = new FuzzyElement();
 			salud.addLeftTrapezoid("bajo",30,35);
 			salud.addTrapezoid("medio",30,35,60,70);
 			salud.addRightTrapezoid("alto",60,65);
 			elements.Add ("salud",salud);
-
+			
 			FuzzyElement velocidad = new FuzzyElement();
 			velocidad.addLeftTrapezoid("bajo",1,1.25);
 			velocidad.addTrapezoid("medio",1.25,1.5,2.0,2.25);
 			velocidad.addRightTrapezoid("alto",2.25,2.75);
 			elements.Add ("velocidad",velocidad);
-
+			
 			FuzzyElement comunicacion = new FuzzyElement();
 			comunicacion.addLeftTrapezoid("bajo",1,1.25);
 			comunicacion.addTrapezoid("medio",1.25,1.5,2.0,2.25);
 			comunicacion.addRightTrapezoid("alto",2.25,3.0);
 			elements.Add ("comunicacion",comunicacion);
-
+			
 			FuzzyElement resistencia = new FuzzyElement();
 			resistencia.addLeftTrapezoid("bajo",30,35);
 			resistencia.addTrapezoid("medio",30,35,65,70);
 			resistencia.addRightTrapezoid("alto",65,70);
 			elements.Add ("resistencia",resistencia);
-
+			
 			FuzzyElement ataque = new FuzzyElement();
 			ataque.addLeftTrapezoid("bajo",2,3);
 			ataque.addTrapezoid("medio",2,3,4,6);
 			ataque.addRightTrapezoid("alto",5.5,6);
 			elements.Add ("ataque",ataque);
-
+			
 			FuzzyElement defensa = new FuzzyElement();
 			defensa.addLeftTrapezoid("bajo",1,2);
 			defensa.addTrapezoid("medio",1,2,3,4);
 			defensa.addRightTrapezoid("alto",3,4.0);
 			elements.Add ("defensa",defensa);
-
+			
 			FuzzyElement edad = new FuzzyElement();
 			edad.addLeftTrapezoid("bajo",1,1);
 			edad.addTrapezoid("medio",1,1,2,2);
 			edad.addRightTrapezoid("alto",2,2);
 			elements.Add ("edad",edad);
-
+			
 		}
 		public void addElement(FuzzyElement element, String name){
 			elements.Add ( name, element);
 		}
 		private int selectLeader(List<Dictionary<String,FuzzySet>> results){
 			//regla 1
-			//adulto, defensa alta y alto rango de comunicacion
+			//velocidad alta y ataque alto y adulto
 			for( int i=0;i<results.Count;i++){
 				Dictionary<String,FuzzySet> curResults = results[i];
-				if( curResults["defensa"].name().Equals("alto") && curResults["comunicacion"].Equals("alto")&& curResults["edad"].Equals("2.00")) return i;
+				if( curResults["ataque"].name().Equals("alto") && curResults["velocidad"].Equals("alto")&& curResults["edad"].Equals("2.00")) return i;
 			}
-
+			
 			//regla 2
-			// resistencia alta o media y velocidad alta
+			// salud media o alta y rango de comunicacion alto
 			for( int i=0;i<results.Count;i++){
 				Dictionary<String,FuzzySet> curResults = results[i];
-				if( curResults["resistencia"].name().Equals("medio") || curResults["resistencia"].name().Equals("alto")&& curResults["velocidad"].Equals("alto")) return i;
+				if( curResults["salud"].name().Equals("medio") || curResults["salud"].name().Equals("alto")&& curResults["comunicacion"].Equals("alto")) return i;
 			}
-
+			
 			//regla 3
-			// defensa media y salud alta y adulto 
+			// velocidad media o ataque medio y adulto 
 			for( int i=0;i<results.Count;i++){
 				Dictionary<String,FuzzySet> curResults = results[i];
-				if( curResults["defensa"].name().Equals("medio") && curResults["salud"].Equals("alto")&& curResults["edad"].Equals("2.00")) return i;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+				if( curResults["ataque"].name().Equals("medio") && curResults["velocidad"].Equals("alto")&& curResults["edad"].Equals("2.00")) return i;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
 			}
 			return 0;
 		}
-		public Prey getLeader( List<Prey> objects){
+		public Predator getLeader( List<Predator> objects){
 			List<Dictionary<String,FuzzySet>> globalResults = new List<Dictionary<String,FuzzySet>>();
 			for(int i = 0; i< objects.Count ; i++){
 				Dictionary<String,FuzzySet> results = new Dictionary<string, FuzzySet>();
@@ -116,4 +116,6 @@ namespace Assets.My_Assets.scripts
 		}
 	}
 }
+
+
 
