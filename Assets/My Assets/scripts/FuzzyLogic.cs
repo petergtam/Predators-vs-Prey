@@ -71,7 +71,8 @@ public class FuzzyLogic : MonoBehaviour{
 			// 1)
 			double tmpRegla1 = Math.Max ( comidaBajo(comida), rivalesAlto(rivales) );
 			tmpRegla1 = Math.Max ( tmpRegla1, companerosAlto(companeros) );
-			
+			double tmpRegla1_1=Math.Max (comidaAlto (comida), rivalesBajo(rivales));
+			 
 			// 2)
 			double tmpRegla2 = Math.Max ( comidaMedio(comida), rivalesMedio(rivales) );
 			tmpRegla2 = Math.Min ( tmpRegla2, companerosMedio(companeros) );
