@@ -11,6 +11,7 @@ public class Prey : Agent
 
     public static string[] names = { "Gibran", "Pedro", "Celeste", "Lea", "Ivan", "Victor", "Alberto", "Hector", "Mayra", "Orlando", "Mario", "Ruben", "Armando", "Edith", "Arturo", "Jairo"};
     public static int indice = 0;
+    private NeuralNetwork nn;
 
     void Start()
     {
@@ -34,6 +35,7 @@ public class Prey : Agent
         textMesh.font = f;
         textMesh.renderer.sharedMaterial = f.material;
         textMesh.text = name;
+        if (name == "Pedro") {  nn = new NeuralNetwork(); }
 
     }
 
@@ -44,7 +46,7 @@ public class Prey : Agent
 
         nav.speed = Velocidad(isNeededRun);
 
-        StimulusEnum stimulus = SelectStimulu();
+        StimulusEnum stimulus = SelectStimulu(nn);
         switch (stimulus)
         {
             case StimulusEnum.LeaderShip: //Se elige el lider

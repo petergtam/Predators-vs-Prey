@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using UnityEngine;
@@ -17,21 +18,15 @@ namespace Assets.My_Assets
 
         #region Estimulos
 
-        public StimulusEnum SelectStimulu()
+        public StimulusEnum SelectStimulu(NeuralNetwork nn)
         {
             if (this.name == "Pedro")
             {
-                double[] valor = GetStimulus();
-                Debug.Log(valor);/*
-                PlotManager.Instance.PlotCreate("Stimulus", -1, 1, Color.blue, new Vector2(0, 0));
-                PlotManager.Instance.PlotCreate("Fear",Color.black,"Stimulus");
-                PlotManager.Instance.PlotAdd("Fear", (float) valor[0]);
-                PlotManager.Instance.PlotCreate("Lider", Color.green, "Stimulus");
-                PlotManager.Instance.PlotAdd("Lider", (float)valor[1]);
-                PlotManager.Instance.PlotCreate("Hunger", Color.red, "Stimulus");
-                PlotManager.Instance.PlotAdd("Hunger", (float)valor[2]);
-                PlotManager.Instance.PlotCreate("Mating", Color.blue, "Stimulus");
-                PlotManager.Instance.PlotAdd("Mating", (float)valor[3]); */
+                nn.training(GetStimulus());
+                foreach (var weight in nn.weights)
+                {
+                    Console.WriteLine(weight);
+                }
             }
             return StimulusEnum.Hungry;
             double[] lstEstimulus = GetStimulus();
