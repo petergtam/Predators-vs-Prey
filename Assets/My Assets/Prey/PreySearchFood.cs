@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -6,6 +7,21 @@ public class PreySearchFood : MonoBehaviour
 {
     private NodesController nodes;
     private FuzzyLogic fLogic;
+    private Dictionary<string, double[]> storage;
+
+    private string GetEdgeName(string vertex1, string vertex2)
+    {
+        string result;
+        if (String.CompareOrdinal(vertex1, vertex2) >= 0)
+        {
+            result = vertex1 + vertex2;
+        }
+        else
+        {
+            result = vertex2 + vertex1;
+        }
+        return result;
+    }
 
     public Vector3 searchForFood(Vector3 actualPosition)
     {
@@ -13,24 +29,54 @@ public class PreySearchFood : MonoBehaviour
             setNodesController();
         if (fLogic == null)
             setFuzzyLogic();
+        if (storage == null)
+            storage = new Dictionary<string, double[]>();
+
+
+
+        GameObject actualNode = nodes.getNeartestNode(actualPosition);	//Obtiene el nodo actual
+        GameObject[] lstNeighbors = nodes.getNeighbors(actualNode);					//obtiene los nodos vecinos
+        foreach (var a in lstNeighbors)
+        {
+            var name = GetEdgeName(actualNode.GetComponent<PathNode>().name, a.GetComponent<PathNode>().name);
+            
+            if (storage.ContainsKey(name))
+            {
+                storage[name][0] = actualNode.GetComponent<PathNode>().getPlants() + a.GetComponent<PathNode>().getPlants() / 2;
+                storage[name][1] = actualNode.GetComponent<PathNode>().getPrays() + a.GetComponent<PathNode>().getPrays();
+                storage[name][2] = actualNode.GetComponent<PathNode>().getPredators() + a.GetComponent<PathNode>().getPredators();
+                storage[name][3] = Time.time;
+            }
+            else
+            {
+                double[] nodesData = new double[5];
+                nodesData[0] = actualNode.GetComponent<PathNode>().getPlants() + a.GetComponent<PathNode>().getPlants() / 2;
+                nodesData[1] = actualNode.GetComponent<PathNode>().getPrays() + a.GetComponent<PathNode>().getPrays();
+                nodesData[2] = actualNode.GetComponent<PathNode>().getPredators() + a.GetComponent<PathNode>().getPredators();
+                nodesData[3] = Time.time;
+                nodesData[4] = Mathf.Abs(actualPosition.magnitude - actualNode.transform.position.magnitude);
+
+                storage.Add(name, nodesData);    
+            }
+        }
 
         return searchAStar(actualPosition);
+        
+        
+        
+        //double[,] nodesData = formatData(n, neighbors);				//Fomatea la data para enviarlo al fuzzy Logic
+        //double[] ret = fLogic.calculate(nodesData);				//Calcula el fuzzy value de los nodos
 
-//        GameObject n = nodes.getNeartestNode(actualPosition);	//Obtiene el nodo actual
-//        GameObject[] neighbors = nodes.getNeighbors(n);					//obtiene los nodos vecinos
-//        double[,] nodesData = formatData(n, neighbors);				//Fomatea la data para enviarlo al fuzzy Logic
-//        double[] ret = fLogic.calculate(nodesData);				//Calcula el fuzzy value de los nodos
-//
-//        //Selecionar el que tiene un mayor fuzzy value
-//        int max = 0;
-//        for (int i = 0; i < ret.Length; i++)
-//            if (ret[max] <= ret[i])
-//                max = i;
-//
-//        //Si fue el ultimo, entonses la pocicion actual es la mejor
-//        if (max == ret.Length - 1)
-//            return actualPosition;
-//        return neighbors[max].transform.position;
+        //Selecionar el que tiene un mayor fuzzy value
+        //int max = 0;
+        //for (int i = 0; i < ret.Length; i++)
+        //    if (ret[max] <= ret[i])
+        //        max = i;
+
+        ////Si fue el ultimo, entonses la pocicion actual es la mejor
+        //if (max == ret.Length - 1)
+        //    return actualPosition;
+        //return neighbors[max].transform.position;
     }
 
     private void setNodesController()
