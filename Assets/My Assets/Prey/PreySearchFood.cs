@@ -2,110 +2,48 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using Assets.My_Assets.scripts;
 
 public class PreySearchFood : MonoBehaviour
 {
-    private NodesController nodes;
-    private FuzzyLogic fLogic;
-    private Dictionary<string, double[]> storage;
-
-    private string GetEdgeName(string vertex1, string vertex2)
-    {
-        string result;
-        if (String.CompareOrdinal(vertex1, vertex2) >= 0)
-        {
-            result = vertex1 + vertex2;
-        }
-        else
-        {
-            result = vertex2 + vertex1;
-        }
-        return result;
-    }
+    private NodesController _nodes;
+    private GraphEdges _edges;
+    private BayesianNetworkPolyTree _bayesianNetwork;
 
     public Vector3 searchForFood(Vector3 actualPosition)
     {
-        if (nodes == null)
-            setNodesController();
-        if (fLogic == null)
-            setFuzzyLogic();
-        if (storage == null)
-            storage = new Dictionary<string, double[]>();
+        if (_nodes == null)
+            _nodes = GameObject.Find("Global").GetComponent<NodesController>();
+        if (_edges == null)
+            _edges = new GraphEdges();
+        if (_bayesianNetwork == null)
+            InitBayesianNetwork();
 
-
-
-        GameObject actualNode = nodes.getNeartestNode(actualPosition);	//Obtiene el nodo actual
-        GameObject[] lstNeighbors = nodes.getNeighbors(actualNode);					//obtiene los nodos vecinos
-        foreach (var a in lstNeighbors)
-        {
-            var name = GetEdgeName(actualNode.GetComponent<PathNode>().name, a.GetComponent<PathNode>().name);
-            
-            if (storage.ContainsKey(name))
-            {
-                storage[name][0] = actualNode.GetComponent<PathNode>().getPlants() + a.GetComponent<PathNode>().getPlants() / 2;
-                storage[name][1] = actualNode.GetComponent<PathNode>().getPrays() + a.GetComponent<PathNode>().getPrays();
-                storage[name][2] = actualNode.GetComponent<PathNode>().getPredators() + a.GetComponent<PathNode>().getPredators();
-                storage[name][3] = Time.time;
-            }
-            else
-            {
-                double[] nodesData = new double[5];
-                nodesData[0] = actualNode.GetComponent<PathNode>().getPlants() + a.GetComponent<PathNode>().getPlants() / 2;
-                nodesData[1] = actualNode.GetComponent<PathNode>().getPrays() + a.GetComponent<PathNode>().getPrays();
-                nodesData[2] = actualNode.GetComponent<PathNode>().getPredators() + a.GetComponent<PathNode>().getPredators();
-                nodesData[3] = Time.time;
-                nodesData[4] = Mathf.Abs(actualPosition.magnitude - actualNode.transform.position.magnitude);
-
-                storage.Add(name, nodesData);    
-            }
-        }
-
-        return searchAStar(actualPosition);
-        
-        
-        
-        //double[,] nodesData = formatData(n, neighbors);				//Fomatea la data para enviarlo al fuzzy Logic
-        //double[] ret = fLogic.calculate(nodesData);				//Calcula el fuzzy value de los nodos
-
-        //Selecionar el que tiene un mayor fuzzy value
-        //int max = 0;
-        //for (int i = 0; i < ret.Length; i++)
-        //    if (ret[max] <= ret[i])
-        //        max = i;
-
-        ////Si fue el ultimo, entonses la pocicion actual es la mejor
-        //if (max == ret.Length - 1)
-        //    return actualPosition;
-        //return neighbors[max].transform.position;
+        return SearchAStar(actualPosition);
     }
 
-    private void setNodesController()
-    {
-        nodes = GameObject.Find("Global").GetComponent<NodesController>();
-    }
 
-    private void setFuzzyLogic()
+    private Vector3 SearchAStar(Vector3 actualPosition)
     {
-        fLogic = GameObject.Find("Global").GetComponent<FuzzyLogic>();
-    }
-    
-    private Vector3 searchAStar(Vector3 actualPosition)
-    {
-        GameObject n = nodes.getNeartestNode(actualPosition);	//Obtiene el nodo actual
+        GameObject actualNode = _nodes.getNeartestNode(actualPosition);	//Obtiene el nodo actual
+        GameObject[] lstNeighbors = _nodes.getNeighbors(actualNode);
+        FormatData(actualPosition, actualNode, lstNeighbors);
+
+
         Stack<GameObject> closedStack = new Stack<GameObject>(); 
-        Stack<GameObject> openStack = new Stack<GameObject>(nodes.getNeighbors(n)); //obtiene los nodos vecinos
+        Stack<GameObject> openStack = new Stack<GameObject>(_nodes.getNeighbors(actualNode)); //obtiene los nodos vecinos
 
-        float score = heuristicCost(n);
-        closedStack.Push(n);
+        float score = HeuristicCost(actualNode);
+        closedStack.Push(actualNode);
         while (openStack.Count != 0)
         {
             GameObject current = openStack.Pop();
-            float currentScore = (Mathf.Abs(actualPosition.magnitude - current.transform.position.magnitude)) + heuristicCost(current);
+            float currentScore = (Mathf.Abs(actualPosition.magnitude - current.transform.position.magnitude)) + HeuristicCost(current);
 
             if (currentScore < score)
             {
                 score = currentScore;
-                n = current;
+                actualNode = current;
             }
 
             if (closedStack.Contains(current) == false)
@@ -113,11 +51,14 @@ public class PreySearchFood : MonoBehaviour
                 closedStack.Push(current);
             }
         }
-        return n.transform.position;
+        return actualNode.transform.position;
     }
 
-    private int heuristicCost(GameObject node)
+    private int HeuristicCost(GameObject node)
     {
+        var datos = _edges[node.GetComponent<PathNode>().name];
+
+
         int numPlants = node.GetComponent<PathNode>().getPlants();
         int numPrays = node.GetComponent<PathNode>().getPrays();
         int numPredator = node.GetComponent<PathNode>().getPredators();
@@ -129,23 +70,145 @@ public class PreySearchFood : MonoBehaviour
      * FormatData
      * Le da formato a la informacion de los nodos para procesarla
      */
-    private double[,] formatData(GameObject actualNode, GameObject[] neighbors)
+    private void FormatData(Vector3 actualPosition, GameObject actualNode, GameObject[] lstNeighbors)
     {
-        double[,] nodesData = new double[3, neighbors.Length + 1];
-
-        //Agrega los vecinos para ser procesados
-        for (int i = 0; i < neighbors.Length; i++)
+        foreach (var n in lstNeighbors)
         {
-            nodesData[0, i] = neighbors[i].GetComponent<PathNode>().getPlants();
-            nodesData[1, i] = actualNode.GetComponent<PathNode>().getPrays() + actualNode.GetComponent<PathNode>().getPredators();
-            nodesData[2, i] = 1;
+            double[] nodesData = new double[5];
+            nodesData[0] = actualNode.GetComponent<PathNode>().getPlants() + n.GetComponent<PathNode>().getPlants() / 2;
+            nodesData[1] = actualNode.GetComponent<PathNode>().getPrays() + n.GetComponent<PathNode>().getPrays();
+            nodesData[2] = actualNode.GetComponent<PathNode>().getPredators() + n.GetComponent<PathNode>().getPredators();
+            nodesData[3] = Time.time;
+            nodesData[4] = Mathf.Abs(actualPosition.magnitude - actualNode.transform.position.magnitude);
+
+            _edges.Add(actualNode.GetComponent<PathNode>().name, n.GetComponent<PathNode>().name, nodesData);
         }
-        //Agrega el nodo actual para ser procesado tambien
-        nodesData[0, neighbors.Length] = actualNode.GetComponent<PathNode>().getPlants();
-        nodesData[1, neighbors.Length] = 1;
-        nodesData[2, neighbors.Length] = 1;
-
-        return nodesData;
     }
+    private void InitBayesianNetwork()
+    {
+        _bayesianNetwork = new BayesianNetworkPolyTree();
 
+        //Plantas
+        _bayesianNetwork.P["t1"] = .85;
+        _bayesianNetwork.P["t2"] = .15;
+
+        //Presas
+        _bayesianNetwork.P["y1"] = .3;
+        _bayesianNetwork.P["y2"] = .7;
+
+        //Predadores
+        _bayesianNetwork.P["x1"] = .1;
+        _bayesianNetwork.P["x2"] = .9;
+
+        //Mover dado planta, predador y presa
+        _bayesianNetwork.P["m1|t1,x1,y1"] = .005;
+        _bayesianNetwork.P["m2|t1,x1,y1"] = .995;
+
+        _bayesianNetwork.P["m1|t1,x1,y2"] = .001;
+        _bayesianNetwork.P["m2|t1,x1,y2"] = .999;
+
+        _bayesianNetwork.P["m1|t1,x2,y1"] = .95;
+        _bayesianNetwork.P["m2|t1,x2,y1"] = .05;
+
+        _bayesianNetwork.P["m1|t1,x2,y2"] = .85;
+        _bayesianNetwork.P["m2|t1,x2,y2"] = .15;
+
+        _bayesianNetwork.P["m1|t2,x1,y1"] = .002;
+        _bayesianNetwork.P["m2|t2,x1,y1"] = .998;
+
+        _bayesianNetwork.P["m1|t2,x1,y2"] = .0005;
+        _bayesianNetwork.P["m2|t2,x1,y2"] = .9995;
+
+        _bayesianNetwork.P["m1|t2,x2,y1"] = .4;
+        _bayesianNetwork.P["m2|t2,x2,y1"] = .6;
+
+        _bayesianNetwork.P["m1|t2,x2,y2"] = .008;
+        _bayesianNetwork.P["m2|t2,x2,y2"] = .992;
+
+        //construccion del grafo
+        Vertex vertexT = new Vertex("T");
+        vertexT.AddValues("t1", "t2");
+
+        Vertex vertexX = new Vertex("X");
+        vertexX.AddValues("x1", "x2");
+
+        Vertex vertexY = new Vertex("Y");
+        vertexY.AddValues("y1", "y2");
+
+        Vertex vertexM = new Vertex("M");
+        vertexM.AddValues("m1", "m2");
+        Vertex.AddEdge(ref vertexT, ref vertexM);
+        Vertex.AddEdge(ref vertexX, ref vertexM);
+        Vertex.AddEdge(ref vertexY, ref vertexM);
+
+
+        _bayesianNetwork._root.Add(vertexT);
+        _bayesianNetwork._root.Add(vertexX);
+        _bayesianNetwork._root.Add(vertexY);
+        _bayesianNetwork.V.Add(vertexT);
+        _bayesianNetwork.V.Add(vertexX);
+        _bayesianNetwork.V.Add(vertexY);
+        _bayesianNetwork.V.Add(vertexM);
+
+        //Metodos
+        _bayesianNetwork.InitialTree();
+    }
+    private class GraphEdges
+    {
+        public readonly List<Edge> Edges;
+
+        public GraphEdges()
+        {
+            Edges = new List<Edge>();
+        }
+
+        public List<Edge> this[string index]
+        {
+            get
+            {
+                List<Edge> lstEdges = new List<Edge>();
+                foreach (var e in Edges)
+                {
+                    if (e.NodeA == index || e.NodeB == index)
+                    {
+                        lstEdges.Add(e);
+                    }
+                }
+                return lstEdges;
+            }
+        }
+
+        public void Add(string nodeA, string nodeB, double[] storage)
+        {
+            foreach (var e in Edges)
+            {
+                if ((e.NodeA == nodeA && e.NodeB == nodeB) || (e.NodeA == nodeB && e.NodeB == nodeA))
+                {
+                    e.Storage = storage;
+                    return;
+                }
+            }
+
+            Edge oEdge = new Edge(nodeA,nodeB,storage);
+            Edges.Add(oEdge);
+        }
+    }
+    private class Edge
+    {
+        public string NodeA { get; set; }
+        public string NodeB { get; set; }
+        public double[] Storage { get; set; }
+
+        public Edge(string nodeA, string nodeB, double[] storage)
+        {
+            NodeB = nodeB;
+            NodeA = nodeA;
+            Storage = storage;
+        }
+
+        public override string ToString()
+        {
+            return NodeA + "-" + NodeB + " , " + Storage;
+        }
+    }
 }

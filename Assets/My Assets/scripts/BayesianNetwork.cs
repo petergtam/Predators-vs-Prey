@@ -1,27 +1,36 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using LambdaMessage = System.Collections.Generic.SortedDictionary<string, System.Collections.Generic.SortedDictionary<string, double>>;
-using PiMessages = System.Collections.Generic.SortedDictionary<string, System.Collections.Generic.SortedDictionary<string, double>>;
-
+using LambdaMessage = System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, double>>;
+using PiMessages = System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, double>>;
 
 namespace Assets.My_Assets.scripts
 {
-    public class BayesianNetwork //: MonoBehaviour
+    public class BayesianNetworkPolyTree
     {
+        #region Propiedades
         public Probability P;
         public List<Vertex> V;
 
-        private const int Alpha = 2;
-        private Vertex _root;
-        private Messages _m;
+        private const int Alpha = 1;
+        public readonly List<Vertex> _root;
+        private readonly Messages _messages;
         private List<Vertex> A;
         private List<Value> a;
+        #endregion
 
-        public BayesianNetwork()
+        #region Constructor
+        /// <summary>
+        /// Constructor de la clase
+        /// </summary>
+        public BayesianNetworkPolyTree()
         {
             P = new Probability();
             V = new List<Vertex>();
-            _m = new Messages
+            A = new List<Vertex>();
+            a = new List<Value>();
+            _root = new List<Vertex>();
+
+            _messages = new Messages
             {
                 LambdaMessage = new LambdaMessage(),
                 PiMessage = new LambdaMessage()
@@ -29,191 +38,88 @@ namespace Assets.My_Assets.scripts
             InitValue();
         }
 
+        /// <summary>
+        /// Inicializa la red bayesiana usada en el proyecto
+        /// </summary>
         private void InitValue()
         {
-            P["h1"] = .2;
-            P["b1|h1"] = .25;
-            P["b1|h2"] = .05;
-            P["l1|h1"] = .003;
-            P["l1|h2"] = .00005;
-            P["c1|l1"] = .6;
-            P["c1|l2"] = .02;
+            /*
+            //Plantas
+            P["t1"] = .85;
+            P["t2"] = .15;
 
-            A = new List<Vertex>();
-            a = new List<Value>();
+            //Presas
+            P["y1"] = .3;
+            P["y2"] = .7;
+
+            //Predadores
+            P["x1"] = .1;
+            P["x2"] = .9;
+
+            //Mover dado planta, predador y presa
+            P["m1|t1,x1,y1"] = .005;
+            P["m2|t1,x1,y1"] = .995;
+
+            P["m1|t1,x1,y2"] = .001;
+            P["m2|t1,x1,y2"] = .999;
+
+            P["m1|t1,x2,y1"] = .95;
+            P["m2|t1,x2,y1"] = .05;
+
+            P["m1|t1,x2,y2"] = .85;
+            P["m2|t1,x2,y2"] = .15;
+
+            P["m1|t2,x1,y1"] = .002;
+            P["m2|t2,x1,y1"] = .998;
+
+            P["m1|t2,x1,y2"] = .0005;
+            P["m2|t2,x1,y2"] = .9995;
+
+            P["m1|t2,x2,y1"] = .4;
+            P["m2|t2,x2,y1"] = .6;
+
+            P["m1|t2,x2,y2"] = .008;
+            P["m2|t2,x2,y2"] = .992;
 
             //construccion del grafo
-            Vertex v = new Vertex("H");
-            v.AddValues("h1", "h2");
+            Vertex vertexT = new Vertex("T");
+            vertexT.AddValues("t1", "t2");
 
-            Vertex v1 = new Vertex("B");
-            v1.AddValues("b1", "b2");
-            Vertex.AddEdge(ref v, ref v1);
+            Vertex vertexX = new Vertex("X");
+            vertexX.AddValues("x1", "x2");
 
-            Vertex v2 = new Vertex("L");
-            v2.AddValues("l1", "l2");
-            Vertex.AddEdge(ref v, ref v2);
+            Vertex vertexY = new Vertex("Y");
+            vertexY.AddValues("y1", "y2");
 
-            Vertex v3 = new Vertex("C");
-            v3.AddValues("c1", "c2");
-            Vertex.AddEdge(ref v2, ref v3);
+            Vertex vertexM = new Vertex("M");
+            vertexM.AddValues("m1", "m2");
+            Vertex.AddEdge(ref vertexT, ref vertexM);
+            Vertex.AddEdge(ref vertexX, ref vertexM);
+            Vertex.AddEdge(ref vertexY, ref vertexM);
 
-            _root = v;
-            V.Add(v);
-            V.Add(v1);
-            V.Add(v2);
-            V.Add(v3);
+
+            _root.Add(vertexT);
+            _root.Add(vertexX);
+            _root.Add(vertexY);
+            V.Add(vertexT);
+            V.Add(vertexX);
+            V.Add(vertexY);
+            V.Add(vertexM);
 
             //Metodos
-            initial_tree();
-            update_tree(v2, v2.Val[0]);
-            //update_tree(v3, v3.val[0]);
+            InitialTree();
+            UpdateTree(vertexT, vertexT.Val[0]);
+            UpdateTree(vertexX, vertexX.Val[0]);
+            UpdateTree(vertexY, vertexY.Val[0]);
+            */
         }
-        private string getA()
-        {
-            if (!a.Any())
-                return "\\emptyset";
-            string s = "{";
-            foreach (var e in a)
-            {
-                s += e.Name + ",";
-            }
-            s += "}";
-            return s;
-        }
-        private void send_pi_message(Vertex Z, Vertex X)
-        {
-            //Calculate pix for valor val in Z
-            foreach (var zVal in Z.Val)
-            {
-                //Se optiene el pi message de x con el valor val con los valores de los hijos de Z
-                double multi = 1;
-                foreach (var child in Z.Childs)
-                {
-                    if (X != child)
-                    {
-                        multi *= _m.LambdaMessage[child.Name][zVal.Name];
-                    }
-                }
-                double newValue = zVal.Pi * multi;
-                //_m.PiMessage.SetPiMessages(X.Name, zVal.Name, newValue);
-            }
+        #endregion
 
-            double denomitator = 0;
-            List<string> lstNormalize = new List<string>();
-
-            //Calculate pi for x in X and P(x|a)
-            for (int index = 0; index < X.Val.Count; index++)
-            {
-                var x = X.Val[index];
-                double sum = 0;
-
-                //Sumatoria de P(x|z) px de x con z
-                foreach (var z in Z.Val)
-                {
-                    string s = x.Name + "|" + z.Name;
-                    if (P[s] <= 0) //TODO: Verificar si funciona
-                    {
-                        string s2 = X.Val[index - 1].Name + "|" + z.Name;
-                        P[s] = 1 - P[s2];
-                    }
-                    sum += P[s] * _m.PiMessage[X.Name][z.Name];
-                }
-
-                x.Pi = sum;
-                string name = x.Name + "|" + getA();
-                P[name] = x.LambdaValue * x.Pi * Alpha;
-
-                denomitator += P[name];
-                lstNormalize.Add(name);
-            }
-
-            //Normalizar P(x|a)
-            foreach (var e in lstNormalize)
-            {
-                P[e] = P[e] / denomitator;
-            }
-
-            //for cada Y en los hijos de X tal que Y no esta en A
-            foreach (var Y in X.Childs)
-            {
-                if (!A.Contains(Y))
-                {
-                    send_pi_message(X, Y);
-                }
-            }
-        }
-        private void send_lambda_message(Vertex Y, Vertex X)
-        {
-            double denomitator = 0;
-            List<string> lstNormalize = new List<string>();
-
-            //Calculate lambday for each x in X
-            foreach (var x in X.Val)
-            {
-                double sum = 0;
-
-                //Sumatoria de P(y|x) por lamba y
-                for (int index = 0; index < Y.Val.Count; index++)
-                {
-                    var y = Y.Val[index];
-                    string s = y.Name + "|" + x.Name;
-                    if (P[s] <= 0) //TODO: Cambiar
-                    {
-                        string s2 = Y.Val[index - 1].Name + "|" + x.Name;
-                        P[s] = 1 - P[s2];
-                    }
-                    sum += P[s] * y.LambdaValue;
-                }
-                //_m.LambdaMessage.SetLambdaMessage(Y.Name, x.Name, sum);
-
-
-
-                double multi = 1;
-                //Productorias de lambda message de U con valor x
-                foreach (var U in X.Childs)
-                {
-                    multi *= _m.LambdaMessage[U.Name][x.Name];
-                }
-                x.LambdaValue = multi;
-
-                //Calcular P(x|a)
-                string name = x.Name + "|" + getA();
-                P[name] = x.LambdaValue * x.Pi * Alpha;
-
-                //Para normalizacion
-                denomitator += P[name];
-                lstNormalize.Add(name);
-            }
-
-            //Normalizar P(x|a)
-            foreach (var e in lstNormalize)
-            {
-                P[e] = P[e] / denomitator;
-            }
-
-            //Si X no es root y sus padres no pertenecen a A
-            if (X != _root)
-            {
-                foreach (var Z in X.Parents)
-                {
-                    if (!A.Contains(Z))
-                    {
-                        send_lambda_message(X, Z);
-                    }
-                }
-            }
-
-            //for cada W hijo de X que no pertenecen a A y sea diferente de Y
-            foreach (var W in X.Childs)
-            {
-                if (Y.Name != W.Name && !A.Contains(W))
-                {
-                    send_pi_message(X, W);
-                }
-            }
-        }
-        public void initial_tree()
+        #region Metodos de la red bayesiana
+        /// <summary>
+        /// Inicializa la red bayesiana
+        /// </summary>
+        public void InitialTree()
         {
             //Inicializo en vacio
             A = new List<Vertex>();
@@ -233,35 +139,44 @@ namespace Assets.My_Assets.scripts
                 {
                     foreach (var z in Z.Val)
                     {
-                        //_m.LambdaMessage.SetLambdaMessage(X.Name, z.Name, 1);
+                        SetLambdaMessage(X.Name, z.Name, 1);
+                    }
+                }
+
+                //for each child Y of X
+                foreach (var Y in X.Childs)
+                {
+                    foreach (var x in X.Val)
+                    {
+                        SetPiMessages(Y.Name, x.Name, 1);
                     }
                 }
             }
 
             //for each value r of the root
-            for (int i = 0; i < _root.Val.Count; i++)
+            foreach (var R in _root)
             {
-                var r = _root.Val[i];
-                string s = r.Name + "|emptyset"; //P(r|a)
-                if (P[r.Name] > 0) //TODO: Verificar si funciona
+                foreach (var r in R.Val)
                 {
+                    string s = r.Name + "|emptyset"; //P(r|a)
                     P[s] = P[r.Name];
-                    r.Pi = P[r.Name];
+                    r.PiValue = P[r.Name];
                 }
-                else
-                {
-                    P[s] = 1 - P[_root.Val[i - 1].Name];
-                    r.Pi = 1 - P[_root.Val[i - 1].Name];
-                }
-            }
 
-            //for each child X of the root
-            foreach (var X in _root.Childs)
-            {
-                send_pi_message(_root, X);
+                //for each child X of the root
+                foreach (var X in R.Childs)
+                {
+                    SendPiMessage(R, X);
+                }
             }
         }
-        public void update_tree(Vertex V1, Value v)
+
+        /// <summary>
+        /// Actualiza los valores de la red bayesiana dado V1 con el valor v
+        /// </summary>
+        /// <param name="V1">Vertice del evento que se cumple</param>
+        /// <param name="v">Valor a cumplir</param>
+        public void UpdateTree(Vertex V1, Value v)
         {
             //Agregar valores nuevos
             A.Add(V1);
@@ -269,8 +184,8 @@ namespace Assets.My_Assets.scripts
 
             //Inicializar valores
             v.LambdaValue = 1;
-            v.Pi = 1;
-            string s = v.Name + "|" + getA();
+            v.PiValue = 1;
+            string s = v.Name + "|" + Get_a();
             P[s] = 1; //P(v|a1,a2,a3,an)
 
             //for cada u en val != v
@@ -280,121 +195,481 @@ namespace Assets.My_Assets.scripts
                 {
                     //Como ya sabes que ocurrio el valor v de V los demas valores no pueden ocurrir
                     u.LambdaValue = 0;
-                    u.Pi = 0;
-                    string name = u.Name + "|" + getA(); //P(u|a1,a2,a3,an)
+                    u.PiValue = 0;
+                    string name = u.Name + "|" + Get_a(); //P(u|a1,a2,a3,an)
                     P[name] = 0;
                 }
             }
 
             //Si V1 no es root y sus padres no pertenecen a A
-            if (V1.Name != _root.Name)
+            foreach (var R in _root)
             {
-                foreach (var Z in V1.Parents)
+                if (V1.Name != R.Name)
                 {
-                    if (!A.Contains(Z))
+                    foreach (var Z in V1.Parents)
                     {
-                        send_lambda_message(V1, Z);
+                        if (!A.Contains(Z))
+                        {
+                            SendLambdaMessage(V1, Z);
+                        }
                     }
                 }
             }
 
-            //for cada X hijo de V1 que no pertenecen a A
+            //for cada X hijo de V1
             foreach (var X in V1.Childs)
             {
-                if (!A.Contains(X))
-                {
-                    send_pi_message(V1, X);
-                }
+                SendPiMessage(V1, X);
             }
         }
 
-        public class Value
+        /// <summary>
+        /// Paso de mensajes hacia arriba de la red para hacer backtraking de las probabilidades
+        /// </summary>
+        /// <param name="Z">Vertice</param>
+        /// <param name="X">Vertice</param>
+        private void SendPiMessage(Vertex Z, Vertex X)
         {
-            public string Name { get; set; }
-            public double LambdaValue { get; set; }
-            public double Pi { get; set; }
-
-            public Value(string prName)
+            //Calculate pix for valor val in Z
+            foreach (var zVal in Z.Val)
             {
-                Name = prName;
-                LambdaValue = 0;
-                Pi = 0;
-            }
-        }
-        public class Vertex
-        {
-            public string Name { get; set; }
-            public List<Value> Val { get; set; }
-            public List<Vertex> Parents { get; set; }
-            public List<Vertex> Childs { get; set; }
-
-            public Vertex(string prName)
-            {
-                Name = prName;
-                Val = new List<Value>();
-                Parents = new List<Vertex>();
-                Childs = new List<Vertex>();
-            }
-
-            public void AddValues(params Value[] lstValues)
-            {
-                foreach (var v in lstValues)
+                //Se optiene el pi message de x con el valor val con los valores de los hijos de Z
+                double multi = 1;
+                foreach (var child in Z.Childs)
                 {
-                    Val.Add(v);
-                }
-            }
-
-            public void AddValues(params string[] lstValues)
-            {
-                foreach (var s in lstValues)
-                {
-                    Val.Add(new Value(s));
-                }
-            }
-
-            public static void AddEdge(ref Vertex padre, ref Vertex hijo)
-            {
-                hijo.Parents.Add(padre);
-                padre.Childs.Add(hijo);
-            }
-        }
-        private class Messages
-        {
-            public LambdaMessage LambdaMessage { get; set; }
-            public PiMessages PiMessage { get; set; }
-        }
-        public class Probability
-        {
-            private readonly Dictionary<string, double> _probability;
-
-            public Probability()
-            {
-                _probability = new Dictionary<string, double>();
-            }
-
-            public double this[string index]// Indexer declaration
-            {
-                get
-                {
-                    if (!_probability.ContainsKey(index))
+                    if (X != child)
                     {
-                        _probability.Add(index, 0);
+                        multi *= _messages.LambdaMessage[child.Name][zVal.Name];
                     }
-                    return _probability[index];
+                }
+                double newValue = zVal.PiValue * multi;
+                SetPiMessages(X.Name, zVal.Name, newValue);
+            }
+
+            //Si no contiene A
+            if (!A.Contains(X))
+            {
+                double denomitator = 0;
+                List<string> lstNormalize = new List<string>();
+
+                //Para cada valor de X
+                foreach (var xVal in X.Val)
+                {
+                    //Para todos los valores de las probabilidades posibles de los padres de X
+                    double sum = 0;
+                    foreach (var permutation in Vertex.GetValuePermutations(X.Parents))
+                    {
+                        string s = xVal.Name + "|";
+                        double productioria = 1;
+                        for (int i = 0; i < permutation.Count; i++)
+                        {
+                            var val = permutation[i];
+                            productioria *= _messages.PiMessage[X.Name][val.Name];
+                            s += i == permutation.Count - 1 ? val.Name : val.Name + ",";
+                        }
+                        sum += P[s] * productioria;
+                    }
+                    xVal.PiValue = sum;
+
+                    string name = xVal.Name + "|" + Get_a();
+                    P[name] = xVal.LambdaValue * xVal.PiValue * Alpha;
+
+                    //Valores para la normalizacion
+                    denomitator += P[name];
+                    lstNormalize.Add(name);
                 }
 
-                set
+                //Normalizar P(x|a)
+                foreach (var e in lstNormalize)
                 {
-                    if (_probability.ContainsKey(index))
+                    P[e] = P[e] / denomitator;
+                }
+
+                //for cada Y en los hijos de X
+                foreach (var Y in X.Childs)
+                {
+                    SendPiMessage(X, Y);
+                }
+            }
+
+            //Si no todos los valores lambda de x son igual a 1
+            bool condition = false;
+            foreach (var xVal in X.Val)
+            {
+                if (xVal.LambdaValue >= 1)
+                {
+                    condition = true;
+                }
+            }
+
+            //Enviar mensajes a todos los W que son padres de X y no son Z ni estan A
+            if (condition)
+            {
+                foreach (var W in X.Parents)
+                {
+                    if (W.Name != Z.Name && A.Contains(W) == false)
                     {
-                        _probability[index] = value;
+                        SendLambdaMessage(X, W);
                     }
-                    else
+                }
+            }
+        }
+
+        /// <summary>
+        /// Paso de mensajes hacia abajo de la red para hacer backtraking de las probabilidades
+        /// </summary>
+        /// <param name="Y">Vertice</param>
+        /// <param name="X">Vertice</param>
+        private void SendLambdaMessage(Vertex Y, Vertex X)
+        {
+            double denomitator = 0;
+            List<string> lstNormalize = new List<string>();
+
+            //Para cada valor de X
+            foreach (var xVal in X.Val)
+            {
+                //Sumatora para cada valor de Y
+                double sumYVals = 0;
+                foreach (var yVal in Y.Val)
+                {
+                    //Para todos los valores de las probabilidades posibles de los padres de Y diferentes a X
+                    double sum = 0;
+                    List<Vertex> lstParent = Y.Parents.Where(parent => parent.Name != X.Name).ToList();
+                    foreach (var permutation in Vertex.GetValuePermutations(lstParent))
                     {
-                        _probability.Add(index, value);
+                        string s = yVal.Name + "|" + xVal.Name + ",";
+                        double productioria = 1;
+                        for (int i = 0; i < permutation.Count; i++)
+                        {
+                            var val = permutation[i];
+                            productioria *= _messages.PiMessage[Y.Name][val.Name];
+                            s += i == permutation.Count - 1 ? val.Name : val.Name + ",";
+                        }
+                        sum += P[s] * productioria;
                     }
+                    sumYVals += sum * yVal.LambdaValue;
+                }
+                SetLambdaMessage(Y.Name, xVal.Name, sumYVals);
+
+                //Para cada hijo U de X multiplicar los mensajes lambd de U con el valor xVal
+                double productoria = 1;
+                foreach (var U in X.Childs)
+                {
+                    productoria *= _messages.LambdaMessage[U.Name][xVal.Name];
+                }
+                xVal.LambdaValue = productoria;
+
+                //P(x|{a})
+                string name = xVal.Name + "|" + Get_a();
+                P[name] = xVal.LambdaValue * xVal.PiValue * Alpha;
+
+                //Valores para la normalizacion
+                denomitator += P[name];
+                lstNormalize.Add(name);
+            }
+
+            //Normalizar P(x|a)
+            foreach (var e in lstNormalize)
+            {
+                P[e] = P[e] / denomitator;
+            }
+
+            //Para cada padre Z de X que no esta en A
+            foreach (var Z in X.Parents)
+            {
+                if (!A.Contains(Z))
+                {
+                    SendLambdaMessage(X, Z);
+                }
+            }
+
+            //for cada W hijo de X que sea diferente de Y
+            foreach (var W in X.Childs)
+            {
+                if (Y.Name != W.Name)
+                {
+                    SendPiMessage(X, W);
+                }
+            }
+        }
+        #endregion
+
+        #region Metodos auxiliares
+        /// <summary>
+        /// Actualiza los lambda mensajes de la red
+        /// </summary>
+        /// <param name="childName">Nombre del nodo hijo</param>
+        /// <param name="parentVal">Nombre del valor del padre</param>
+        /// <param name="val">Valor a actualizar</param>
+        private void SetLambdaMessage(string childName, string parentVal, double val)
+        {
+            if (_messages.LambdaMessage.ContainsKey(childName))
+            {
+                if (_messages.LambdaMessage[childName].ContainsKey(parentVal))
+                {
+                    _messages.LambdaMessage[childName][parentVal] = val;
+                }
+                else
+                {
+                    _messages.LambdaMessage[childName].Add(parentVal, val);
+                }
+            }
+            else
+            {
+                Dictionary<string, double> dir = new Dictionary<string, double>
+                {
+                    {parentVal, val}
+                };
+
+                _messages.LambdaMessage.Add(childName, dir);
+            }
+        }
+
+        /// <summary>
+        /// Actualiza los pi mensajes de la red
+        /// </summary>
+        /// <param name="parentName">Nombre del nodo padre</param>
+        /// <param name="childVal">Nombre del valor del hijo</param>
+        /// <param name="val">Valor a actualizar</param>
+        private void SetPiMessages(string parentName, string childVal, double val)
+        {
+            if (_messages.PiMessage.ContainsKey(parentName))
+            {
+                if (_messages.PiMessage[parentName].ContainsKey(childVal))
+                {
+                    _messages.PiMessage[parentName][childVal] = val;
+                }
+                else
+                {
+                    _messages.PiMessage[parentName].Add(childVal, val);
+                }
+            }
+            else
+            {
+                Dictionary<string, double> dir = new Dictionary<string, double>
+                {
+                    {childVal, val}
+                };
+
+                _messages.PiMessage.Add(parentName, dir);
+            }
+        }
+
+        /// <summary>
+        /// Obtiene el contenido del conjunto A en formato string
+        /// </summary>
+        /// <returns>Retorna los valores del conjunto A</returns>
+        private string Get_a()
+        {
+            if (!a.Any())
+                return "emptyset";
+            return a.Aggregate("@", (x, y) => x + "," + y).Replace("@,", "");
+        }
+        #endregion
+    }
+    #region Clases auxiliares
+    /// <summary>
+    /// Estructura de dato del valor de las variables aleatorias
+    /// </summary>
+    public class Value
+    {
+        public string Name { get; set; }
+        public double LambdaValue { get; set; }
+        public double PiValue { get; set; }
+
+        public Value(string prName)
+        {
+            Name = prName;
+            LambdaValue = 0;
+            PiValue = 0;
+        }
+
+        public override string ToString()
+        {
+            return Name;
+        }
+    }
+
+    /// <summary>
+    /// Vertice del DAG
+    /// </summary>
+    public class Vertex
+    {
+        public string Name { get; set; }
+        public List<Value> Val { get; set; }
+        public List<Vertex> Parents { get; set; }
+        public List<Vertex> Childs { get; set; }
+
+        public Vertex(string prName)
+        {
+            Name = prName;
+            Val = new List<Value>();
+            Parents = new List<Vertex>();
+            Childs = new List<Vertex>();
+        }
+
+        public void AddValues(params Value[] lstValues)
+        {
+            foreach (var v in lstValues)
+            {
+                Val.Add(v);
+            }
+        }
+        public void AddValues(params string[] lstValues)
+        {
+            foreach (var s in lstValues)
+            {
+                Val.Add(new Value(s));
+            }
+        }
+        public static void AddEdge(ref Vertex padre, ref Vertex hijo)
+        {
+            hijo.Parents.Add(padre);
+            padre.Childs.Add(hijo);
+        }
+
+        private static int[] NextValuePermutation(int[] finalPermutation, int[] currentPermutation, int index)
+        {
+            int[] permutation = currentPermutation;
+            if (index < finalPermutation.Length)
+            {
+                if (permutation[index] == finalPermutation[index] - 1)
+                {
+                    permutation = NextValuePermutation(finalPermutation, currentPermutation, index + 1);
+                }
+                else
+                {
+                    permutation[index]++;
+
+                    for (int i = 0; i < index; i++)
+                    {
+                        permutation[i] = 0;
+                    }
+                }
+            }
+            return permutation;
+        }
+        public static List<List<Value>> GetValuePermutations(List<Vertex> lstVertices)
+        {
+            List<List<Value>> lstPermutations = new List<List<Value>>();
+
+            int[] finalPermutation = lstVertices.Select(x => x.Val.Count).ToArray();
+            int[] initialPermutation = lstVertices.Select(x => 0).ToArray();
+
+            int maxPermutation = lstVertices.Aggregate(1, (current, vertex) => current * vertex.Val.Count);
+            for (int i = 0; i < maxPermutation; i++)
+            {
+                List<Value> permutation = new List<Value>();
+                for (int j = 0; j < initialPermutation.Length; j++)
+                {
+                    permutation.Add(lstVertices[j].Val[initialPermutation[j]]);
+                }
+                lstPermutations.Add(permutation);
+                initialPermutation = NextValuePermutation(finalPermutation, initialPermutation, 0);
+            }
+            return lstPermutations;
+        }
+
+        /// <summary>
+        /// Metodo auxiliar para impresion
+        /// </summary>
+        /// <returns>Retorna un string formateado</returns>
+        public override string ToString()
+        {
+            string s = Name + ",{";
+            for (int i = 0; i < Val.Count; i++)
+            {
+                var v = Val[i];
+                s += v.Name;
+                if (i != Val.Count - 1)
+                {
+                    s += ",";
+                }
+            }
+            return s + "}";
+        }
+    }
+
+    /// <summary>
+    /// Contenedor de mensajes lambda y pi de la red bayesiana
+    /// </summary>
+    public class Messages
+    {
+        public LambdaMessage LambdaMessage { get; set; }
+        public PiMessages PiMessage { get; set; }
+    }
+
+    /// <summary>
+    /// Contenedor de las probabilidades de la red bayesiana
+    /// </summary>
+    public class Probability
+    {
+        private readonly Dictionary<string, double> _probability;
+
+        public Probability()
+        {
+            _probability = new Dictionary<string, double>();
+        }
+
+        public double this[string index]// Indexer declaration
+        {
+            get
+            {
+                string probabilitiString;
+
+                string[] splitStrings = index.Split('|');
+                string[] lstPrecedent = splitStrings[0].Split(',');
+                string sPrecedent = lstPrecedent.OrderBy(x => x).Aggregate("@", (a, b) => a + "," + b);
+
+                if (splitStrings.Length > 1)
+                {
+                    string[] lstConsequent = splitStrings[1].Split(',');
+                    var sConsequent = lstConsequent.OrderBy(x => x).Aggregate("@", (a, b) => a + "," + b);
+
+                    probabilitiString = (sPrecedent + "|" + sConsequent).Replace("@,", "");
+                }
+                else
+                {
+                    probabilitiString = (sPrecedent).Replace("@,", "");
+                }
+
+                if (!_probability.ContainsKey(probabilitiString))
+                {
+                    _probability.Add(probabilitiString, 0);
+                }
+                return _probability[probabilitiString];
+            }
+
+            set
+            {
+                string probabilitiString;
+
+                string[] splitStrings = index.Split('|');
+                string[] lstPrecedent = splitStrings[0].Split(',');
+                string sPrecedent = lstPrecedent.OrderBy(x => x).Aggregate("@", (a, b) => a + "," + b);
+
+                if (splitStrings.Length > 1)
+                {
+                    string[] lstConsequent = splitStrings[1].Split(',');
+                    var sConsequent = lstConsequent.OrderBy(x => x).Aggregate("@", (a, b) => a + "," + b);
+
+                    probabilitiString = (sPrecedent + "|" + sConsequent).Replace("@,", "");
+                }
+                else
+                {
+                    probabilitiString = (sPrecedent).Replace("@,", "");
+                }
+
+                if (_probability.ContainsKey(probabilitiString))
+                {
+                    _probability[probabilitiString] = value;
+                }
+                else
+                {
+                    _probability.Add(probabilitiString, value);
                 }
             }
         }
     }
+    #endregion
 }
