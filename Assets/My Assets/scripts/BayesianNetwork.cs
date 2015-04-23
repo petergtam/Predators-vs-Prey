@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 using LambdaMessage = System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, double>>;
 using PiMessages = System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, double>>;
 
@@ -9,7 +10,7 @@ namespace Assets.My_Assets.scripts
     {
         #region Propiedades
         public Probability P;
-        public List<Vertex> V;
+        public Dictionary<string,Vertex> V;
 
         private const int Alpha = 1;
         public readonly List<Vertex> _root;
@@ -25,7 +26,7 @@ namespace Assets.My_Assets.scripts
         public BayesianNetworkPolyTree()
         {
             P = new Probability();
-            V = new List<Vertex>();
+            V = new Dictionary<string, Vertex>();
             A = new List<Vertex>();
             a = new List<Value>();
             _root = new List<Vertex>();
@@ -101,10 +102,10 @@ namespace Assets.My_Assets.scripts
             _root.Add(vertexT);
             _root.Add(vertexX);
             _root.Add(vertexY);
-            V.Add(vertexT);
-            V.Add(vertexX);
-            V.Add(vertexY);
-            V.Add(vertexM);
+            V.Add(vertexT.Name,vertexT);
+            V.Add(vertexX.Name,vertexX);
+            V.Add(vertexY.Name,vertexY);
+            V.Add(vertexM.Name,vertexM);
 
             //Metodos
             InitialTree();
@@ -126,7 +127,7 @@ namespace Assets.My_Assets.scripts
             a = new List<Value>();
 
             //for each X in V
-            foreach (var X in V)
+            foreach (var X in V.Values)
             {
                 //for each value on x of X
                 foreach (var x in X.Val)

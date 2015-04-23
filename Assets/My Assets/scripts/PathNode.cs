@@ -26,7 +26,7 @@ public class PathNode : MonoBehaviour {
 		}
  
 		//inicializa que tan rapido nacen los arboles y cuantos puede haber en cada PATHNODE
-		fertility = Random.Range (30, 60);
+		fertility = Random.Range (0, 30);
 		maxTrees = Random.Range (2, 15);
 
 
@@ -92,7 +92,7 @@ public class PathNode : MonoBehaviour {
 		Collider[] hitColliders = Physics.OverlapSphere(transform.position, this.ratius);
 
 		//Valor MINIMO, Agregado para evitar errores de matriz vacia en el algoritmo de FUZZY LOGIC
-		float plants = 10;
+		float plants = 0;
 
 		//Por cada objeto encontrado revisa si es un arbol y añada su cantidad de comida
 		for (int i = 0; i < hitColliders.Length; i++) {
@@ -100,65 +100,80 @@ public class PathNode : MonoBehaviour {
 				plants += hitColliders[i].GetComponent<Plant>().flesh;
 			}
 		}
-	    return (int) plants / 10;
+	    return (int) plants;
 	}
 
-	public int getNumberOfTrees(){
-			Collider[] hitColliders = Physics.OverlapSphere(transform.position, this.ratius);
+    public int getNumberOfTrees()
+    {
+        Collider[] hitColliders = Physics.OverlapSphere(transform.position, this.ratius);
 
-			//Valor MINIMO, Agregado para evitar errores de matriz vacia en el algoritmo de FUZZY LOGIC
-			int plants = 1;
-			for (int i = 0; i < hitColliders.Length; i++) {
-				if(hitColliders[i].gameObject.tag == "Tree"){
-					plants++;
-				}
-			}
-			return plants;
-	}
+        //Valor MINIMO, Agregado para evitar errores de matriz vacia en el algoritmo de FUZZY LOGIC
+        int plants = 0;
+        for (int i = 0; i < hitColliders.Length; i++)
+        {
+            if (hitColliders[i].gameObject.tag == "Tree")
+            {
+                plants++;
+            }
+        }
+        return plants;
+    }
 
-	public int getPrays(){
-		Collider[] hitColliders = Physics.OverlapSphere(transform.position, this.ratius);
+    public int getPrays()
+    {
+        Collider[] hitColliders = Physics.OverlapSphere(transform.position, this.ratius);
 
-		//Valor MINIMO, Agregado para evitar errores de matriz vacia en el algoritmo de FUZZY LOGIC
-		int prays = 1;
-		for (int i = 0; i < hitColliders.Length; i++) {
-			
-			//Si es un velocirraptor
-			if(hitColliders[i].GetComponent<Prey>() != null){
-				prays++;
-			}
-		}
-		return prays;
-	}
+        //Valor MINIMO, Agregado para evitar errores de matriz vacia en el algoritmo de FUZZY LOGIC
+        int prays = 0;
+        for (int i = 0; i < hitColliders.Length; i++)
+        {
 
-
-	public int getPredators(){
-		Collider[] hitColliders = Physics.OverlapSphere(transform.position, this.ratius);
-		
-		//Por cada objeto encontrado
-		int predators = 1;
-		for (int i = 0; i < hitColliders.Length; i++) {
-			
-			//Si es un velocirraptor
-			if(hitColliders[i].GetComponent<Predator>() != null){
-				predators++;
-			}
-		}
-		return predators;
-	}
+            //Si es un velocirraptor
+            if (hitColliders[i].GetComponent<Prey>() != null)
+            {
+                prays++;
+            }
+        }
+        return prays;
+    }
 
 
-	private void plantTree(){
-		Vector3 randPos = randomPosition();
-		GameObject g = (GameObject)Instantiate(Resources.LoadAssetAtPath("Assets/My Assets/tree.prefab", typeof(GameObject)), randPos , Quaternion.identity);
-		g.name = "tree";
-	}
+    public int getPredators()
+    {
+        Collider[] hitColliders = Physics.OverlapSphere(transform.position, this.ratius);
 
-	/*
+        //Por cada objeto encontrado
+        int predators = 0;
+        for (int i = 0; i < hitColliders.Length; i++)
+        {
+
+            //Si es un velocirraptor
+            if (hitColliders[i].GetComponent<Predator>() != null)
+            {
+                predators++;
+            }
+        }
+        return predators;
+    }
+
+
+    private void plantTree()
+    {
+        Vector3 randPos = randomPosition();
+        GameObject g =
+            (GameObject)
+                Instantiate(Resources.LoadAssetAtPath("Assets/My Assets/tree.prefab", typeof (GameObject)), randPos,
+                    Quaternion.identity);
+        g.name = "tree";
+    }
+
+    /*
 	 * Regresa una psicion aleatoria dento del nodo, NO REVISA SI SE ENCUENTRA ALGO EN ESA POCICION ACTUALMENTE
 	 */
-	private Vector3 randomPosition(){
-		Vector2 r = (Random.insideUnitCircle * ratius)/2;
-		return transform.position + new Vector3 (r.x, 0, r.y);
-	}
+
+    private Vector3 randomPosition()
+    {
+        Vector2 r = (Random.insideUnitCircle*ratius)/2;
+        return transform.position + new Vector3(r.x, 0, r.y);
+    }
 }

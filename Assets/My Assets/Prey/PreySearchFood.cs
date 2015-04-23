@@ -2,6 +2,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Assets.My_Assets.scripts;
 
 public class PreySearchFood : MonoBehaviour
@@ -25,45 +26,134 @@ public class PreySearchFood : MonoBehaviour
 
     private Vector3 SearchAStar(Vector3 actualPosition)
     {
+        var t = Time.time;
         GameObject actualNode = _nodes.getNeartestNode(actualPosition);	//Obtiene el nodo actual
         GameObject[] lstNeighbors = _nodes.getNeighbors(actualNode);
         FormatData(actualPosition, actualNode, lstNeighbors);
 
-
-        Stack<GameObject> closedStack = new Stack<GameObject>(); 
-        Stack<GameObject> openStack = new Stack<GameObject>(_nodes.getNeighbors(actualNode)); //obtiene los nodos vecinos
-
-        float score = HeuristicCost(actualNode);
-        closedStack.Push(actualNode);
-        while (openStack.Count != 0)
+        GameObject result = actualNode;
+        double score = HeuristicCost(actualNode,actualNode); //TODO: Cambiar la heuristica 
+        foreach (var current in lstNeighbors)
         {
-            GameObject current = openStack.Pop();
-            float currentScore = (Mathf.Abs(actualPosition.magnitude - current.transform.position.magnitude)) + HeuristicCost(current);
+            double currentScore = HeuristicCost(current,actualNode);
 
-            if (currentScore < score)
+            if (currentScore > score)
             {
                 score = currentScore;
-                actualNode = current;
+                result = current;
             }
-
-            if (closedStack.Contains(current) == false)
+            else if (currentScore == score)
             {
-                closedStack.Push(current);
+                if (actualNode.name != current.name)
+                {
+                    score = currentScore;
+                    result = current;
+                }
+                else if (Mathf.Abs(actualPosition.sqrMagnitude - result.transform.position.sqrMagnitude) > Mathf.Abs(actualPosition.sqrMagnitude - current.transform.position.sqrMagnitude))
+                {
+                    score = currentScore;
+                    result = current;
+                }
             }
         }
-        return actualNode.transform.position;
+        var tResult = Time.time - t;
+        //Debug.Log(tResult);
+        return result.transform.position;
     }
 
-    private int HeuristicCost(GameObject node)
+    private double HeuristicCost(GameObject node, GameObject actualNode)
     {
-        var datos = _edges[node.GetComponent<PathNode>().name];
+        //return 10;
+        //Datos del vecino
+        const double maxTime = 20;
+        List<Edge> lstDatosVecinos = _edges[node.GetComponent<PathNode>().name];
+        List<Edge> lstDatosActuales = lstDatosVecinos.Where(x => Time.time - x.Storage[3] < maxTime).ToList();
 
-
+        //Nodo a evualuar
         int numPlants = node.GetComponent<PathNode>().getPlants();
-        int numPrays = node.GetComponent<PathNode>().getPrays();
+        int numPrays = node.name == actualNode.name? 0: node.GetComponent<PathNode>().getPrays();
         int numPredator = node.GetComponent<PathNode>().getPredators();
 
-        return (numPlants + numPrays * 10) / numPredator;
+        //Valores usados
+        List<Value> lstValues = new List<Value>();
+        Vertex vertex;
+        //Inicializar red bayesiana
+        _bayesianNetwork.InitialTree();
+        
+        //Inidicar si hay plantas
+        if (numPlants > 150)
+        {
+            vertex = _bayesianNetwork.V["A"];
+            lstValues.Add(vertex.Val[0]);
+            _bayesianNetwork.UpdateTree(vertex,vertex.Val[0]);
+        }
+        else
+        {
+            vertex = _bayesianNetwork.V["A"];
+            lstValues.Add(vertex.Val[1]);
+            _bayesianNetwork.UpdateTree(vertex, vertex.Val[1]);
+        }
+
+        //Indicar si hay predadores
+        if (numPredator > 0)
+        {
+            vertex = _bayesianNetwork.V["D"];
+            lstValues.Add(vertex.Val[0]);
+            _bayesianNetwork.UpdateTree(vertex, vertex.Val[0]);
+        }
+        else
+        {
+            vertex = _bayesianNetwork.V["D"];
+            lstValues.Add(vertex.Val[1]);
+            _bayesianNetwork.UpdateTree(vertex, vertex.Val[1]);
+        }
+
+        //Indicar si hay presas 
+        if (numPrays > 0)
+        {
+            vertex = _bayesianNetwork.V["P"];
+            lstValues.Add(vertex.Val[0]);
+            _bayesianNetwork.UpdateTree(vertex, vertex.Val[0]);
+        }
+        else
+        {
+            vertex = _bayesianNetwork.V["P"];
+            lstValues.Add(vertex.Val[1]);
+            _bayesianNetwork.UpdateTree(vertex, vertex.Val[1]);
+        }
+
+        
+        if (lstDatosVecinos != null && lstDatosActuales.Count / lstDatosVecinos.Count > .4)
+        {
+            if (lstDatosActuales.Sum(x => x.Storage[1]) > 0)
+            {
+                vertex = _bayesianNetwork.V["PA"];
+                lstValues.Add(vertex.Val[0]);
+                _bayesianNetwork.UpdateTree(vertex, vertex.Val[0]);
+            }
+            else
+            {
+                vertex = _bayesianNetwork.V["PA"];
+                lstValues.Add(vertex.Val[1]);
+                _bayesianNetwork.UpdateTree(vertex, vertex.Val[1]);
+            }
+
+            if (lstDatosActuales.Sum(x => x.Storage[2]) > 0)
+            {
+                vertex = _bayesianNetwork.V["DA"];
+                lstValues.Add(vertex.Val[0]);
+                _bayesianNetwork.UpdateTree(vertex, vertex.Val[0]);
+            }
+            else
+            {
+                vertex = _bayesianNetwork.V["DA"];
+                lstValues.Add(vertex.Val[1]);
+                _bayesianNetwork.UpdateTree(vertex, vertex.Val[1]);
+            }
+        }
+        
+        string s = "m1|" + lstValues.Aggregate("@", (result, next) => result + "," + next).Replace("@,", "");
+        return _bayesianNetwork.P[s];
     }
 
     /*
@@ -76,7 +166,7 @@ public class PreySearchFood : MonoBehaviour
         {
             double[] nodesData = new double[5];
             nodesData[0] = actualNode.GetComponent<PathNode>().getPlants() + n.GetComponent<PathNode>().getPlants() / 2;
-            nodesData[1] = actualNode.GetComponent<PathNode>().getPrays() + n.GetComponent<PathNode>().getPrays();
+            nodesData[1] = n.GetComponent<PathNode>().getPrays();
             nodesData[2] = actualNode.GetComponent<PathNode>().getPredators() + n.GetComponent<PathNode>().getPredators();
             nodesData[3] = Time.time;
             nodesData[4] = Mathf.Abs(actualPosition.magnitude - actualNode.transform.position.magnitude);
@@ -89,66 +179,159 @@ public class PreySearchFood : MonoBehaviour
         _bayesianNetwork = new BayesianNetworkPolyTree();
 
         //Plantas
-        _bayesianNetwork.P["t1"] = .85;
-        _bayesianNetwork.P["t2"] = .15;
+        _bayesianNetwork.P["a1"] = .85;
+        _bayesianNetwork.P["a2"] = .15;
 
         //Presas
-        _bayesianNetwork.P["y1"] = .3;
-        _bayesianNetwork.P["y2"] = .7;
+        _bayesianNetwork.P["p1"] = .3;
+        _bayesianNetwork.P["p2"] = .7;
+
+        //Presas en nodos adyasentes
+        _bayesianNetwork.P["pa1"] = .6;
+        _bayesianNetwork.P["pa2"] = .4;
 
         //Predadores
-        _bayesianNetwork.P["x1"] = .1;
-        _bayesianNetwork.P["x2"] = .9;
+        _bayesianNetwork.P["d1"] = .35;
+        _bayesianNetwork.P["d2"] = .65;
+
+        //Predadores en nodos adyasentes
+        _bayesianNetwork.P["da1"] = .1;
+        _bayesianNetwork.P["da2"] = .9;
 
         //Mover dado planta, predador y presa
-        _bayesianNetwork.P["m1|t1,x1,y1"] = .005;
-        _bayesianNetwork.P["m2|t1,x1,y1"] = .995;
+        _bayesianNetwork.P["m1|a1,p1,pa1,d1,da1"] = .0003;
+        _bayesianNetwork.P["m2|a1,p1,pa1,d1,da1"] = .9997;
 
-        _bayesianNetwork.P["m1|t1,x1,y2"] = .001;
-        _bayesianNetwork.P["m2|t1,x1,y2"] = .999;
+        _bayesianNetwork.P["m1|a1,p1,pa1,d1,da2"] = .005;
+        _bayesianNetwork.P["m2|a1,p1,pa1,d1,da2"] = .995;
 
-        _bayesianNetwork.P["m1|t1,x2,y1"] = .95;
-        _bayesianNetwork.P["m2|t1,x2,y1"] = .05;
+        _bayesianNetwork.P["m1|a1,p1,pa1,d2,da1"] = .3;
+        _bayesianNetwork.P["m2|a1,p1,pa1,d2,da1"] = .7;
 
-        _bayesianNetwork.P["m1|t1,x2,y2"] = .85;
-        _bayesianNetwork.P["m2|t1,x2,y2"] = .15;
+        _bayesianNetwork.P["m1|a1,p1,pa1,d2,da2"] = .99;
+        _bayesianNetwork.P["m2|a1,p1,pa1,d2,da2"] = .01;
 
-        _bayesianNetwork.P["m1|t2,x1,y1"] = .002;
-        _bayesianNetwork.P["m2|t2,x1,y1"] = .998;
+        _bayesianNetwork.P["m1|a1,p1,pa2,d1,da1"] = .00005;
+        _bayesianNetwork.P["m2|a1,p1,pa2,d1,da1"] = .99995;
 
-        _bayesianNetwork.P["m1|t2,x1,y2"] = .0005;
-        _bayesianNetwork.P["m2|t2,x1,y2"] = .9995;
+        _bayesianNetwork.P["m1|a1,p1,pa2,d1,da2"] = .0008;
+        _bayesianNetwork.P["m2|a1,p1,pa2,d1,da2"] = .9992;
 
-        _bayesianNetwork.P["m1|t2,x2,y1"] = .4;
-        _bayesianNetwork.P["m2|t2,x2,y1"] = .6;
+        _bayesianNetwork.P["m1|a1,p1,pa2,d2,da1"] = .25;
+        _bayesianNetwork.P["m2|a1,p1,pa2,d2,da1"] = .75;
 
-        _bayesianNetwork.P["m1|t2,x2,y2"] = .008;
-        _bayesianNetwork.P["m2|t2,x2,y2"] = .992;
+        _bayesianNetwork.P["m1|a1,p1,pa2,d2,da2"] = .95;
+        _bayesianNetwork.P["m2|a1,p1,pa2,d2,da2"] = .05;
 
+        _bayesianNetwork.P["m1|a1,p2,pa1,d1,da1"] = .00001;
+        _bayesianNetwork.P["m2|a1,p2,pa1,d1,da1"] = .99999;
+
+        _bayesianNetwork.P["m1|a1,p2,pa1,d1,da2"] = .0002;
+        _bayesianNetwork.P["m2|a1,p2,pa1,d1,da2"] = .9998;
+
+        _bayesianNetwork.P["m1|a1,p2,pa1,d2,da1"] = .2;
+        _bayesianNetwork.P["m2|a1,p2,pa1,d2,da1"] = .8;
+
+        _bayesianNetwork.P["m1|a1,p2,pa1,d2,da2"] = .9;
+        _bayesianNetwork.P["m2|a1,p2,pa1,d2,da2"] = .1;
+
+        _bayesianNetwork.P["m1|a1,p2,pa2,d1,da1"] = .000005;
+        _bayesianNetwork.P["m2|a1,p2,pa2,d1,da1"] = .999995;
+
+        _bayesianNetwork.P["m1|a1,p2,pa2,d1,da2"] = .0001;
+        _bayesianNetwork.P["m2|a1,p2,pa2,d1,da2"] = .9999;
+
+        _bayesianNetwork.P["m1|a1,p2,pa2,d2,da1"] = .15;
+        _bayesianNetwork.P["m2|a1,p2,pa2,d2,da1"] = .85;
+
+        _bayesianNetwork.P["m1|a1,p2,pa2,d2,da2"] = .85;
+        _bayesianNetwork.P["m2|a1,p2,pa2,d2,da2"] = .15;
+
+        _bayesianNetwork.P["m1|a2,p1,pa1,d1,da1"] = .00003;
+        _bayesianNetwork.P["m2|a2,p1,pa1,d1,da1"] = .99997;
+
+        _bayesianNetwork.P["m1|a2,p1,pa1,d1,da2"] = .0005;
+        _bayesianNetwork.P["m2|a2,p1,pa1,d1,da2"] = .9995;
+
+        _bayesianNetwork.P["m1|a2,p1,pa1,d2,da1"] = .03;
+        _bayesianNetwork.P["m2|a2,p1,pa1,d2,da1"] = .97;
+
+        _bayesianNetwork.P["m1|a2,p1,pa1,d2,da2"] = .099;
+        _bayesianNetwork.P["m2|a2,p1,pa1,d2,da2"] = .901;
+
+        _bayesianNetwork.P["m1|a2,p1,pa2,d1,da1"] = .000005;
+        _bayesianNetwork.P["m2|a2,p1,pa2,d1,da1"] = .999995;
+
+        _bayesianNetwork.P["m1|a2,p1,pa2,d1,da2"] = .00008;
+        _bayesianNetwork.P["m2|a2,p1,pa2,d1,da2"] = .99992;
+
+        _bayesianNetwork.P["m1|a2,p1,pa2,d2,da1"] = .025;
+        _bayesianNetwork.P["m2|a2,p1,pa2,d2,da1"] = .975;
+
+        _bayesianNetwork.P["m1|a2,p1,pa2,d2,da2"] = .095;
+        _bayesianNetwork.P["m2|a2,p1,pa2,d2,da2"] = .905;
+
+        _bayesianNetwork.P["m1|a2,p2,pa1,d1,da1"] = .000001;
+        _bayesianNetwork.P["m2|a2,p2,pa1,d1,da1"] = .999999;
+
+        _bayesianNetwork.P["m1|a2,p2,pa1,d1,da2"] = .00002;
+        _bayesianNetwork.P["m2|a2,p2,pa1,d1,da2"] = .99998;
+
+        _bayesianNetwork.P["m1|a2,p2,pa1,d2,da1"] = .02;
+        _bayesianNetwork.P["m2|a2,p2,pa1,d2,da1"] = .98;
+
+        _bayesianNetwork.P["m1|a2,p2,pa1,d2,da2"] = .09;
+        _bayesianNetwork.P["m2|a2,p2,pa1,d2,da2"] = .91;
+
+        _bayesianNetwork.P["m1|a2,p2,pa2,d1,da1"] = .0000005;
+        _bayesianNetwork.P["m2|a2,p2,pa2,d1,da1"] = .9999995;
+
+        _bayesianNetwork.P["m1|a2,p2,pa2,d1,da2"] = .00001;
+        _bayesianNetwork.P["m2|a2,p2,pa2,d1,da2"] = .99999;
+
+        _bayesianNetwork.P["m1|a2,p2,pa2,d2,da1"] = .015;
+        _bayesianNetwork.P["m2|a2,p2,pa2,d2,da1"] = .985;
+
+        _bayesianNetwork.P["m1|a2,p2,pa2,d2,da2"] = .085;
+        _bayesianNetwork.P["m2|a2,p2,pa2,d2,da2"] = .915;
+        
         //construccion del grafo
-        Vertex vertexT = new Vertex("T");
-        vertexT.AddValues("t1", "t2");
+        Vertex vertexA = new Vertex("A");
+        vertexA.AddValues("a1", "a2");
 
-        Vertex vertexX = new Vertex("X");
-        vertexX.AddValues("x1", "x2");
+        Vertex vertexD = new Vertex("D");
+        vertexD.AddValues("d1", "d2");
 
-        Vertex vertexY = new Vertex("Y");
-        vertexY.AddValues("y1", "y2");
+        Vertex vertexDA = new Vertex("DA");
+        vertexDA.AddValues("da1", "da2");
+
+        Vertex vertexP = new Vertex("P");
+        vertexP.AddValues("p1", "p2");
+
+        Vertex vertexPA = new Vertex("PA");
+        vertexPA.AddValues("pa1", "pa2");
 
         Vertex vertexM = new Vertex("M");
         vertexM.AddValues("m1", "m2");
-        Vertex.AddEdge(ref vertexT, ref vertexM);
-        Vertex.AddEdge(ref vertexX, ref vertexM);
-        Vertex.AddEdge(ref vertexY, ref vertexM);
+        Vertex.AddEdge(ref vertexA, ref vertexM);
+        Vertex.AddEdge(ref vertexD, ref vertexM);
+        Vertex.AddEdge(ref vertexDA, ref vertexM);
+        Vertex.AddEdge(ref vertexP, ref vertexM);
+        Vertex.AddEdge(ref vertexPA, ref vertexM);
 
 
-        _bayesianNetwork._root.Add(vertexT);
-        _bayesianNetwork._root.Add(vertexX);
-        _bayesianNetwork._root.Add(vertexY);
-        _bayesianNetwork.V.Add(vertexT);
-        _bayesianNetwork.V.Add(vertexX);
-        _bayesianNetwork.V.Add(vertexY);
-        _bayesianNetwork.V.Add(vertexM);
+        _bayesianNetwork._root.Add(vertexA);
+        _bayesianNetwork._root.Add(vertexD);
+        _bayesianNetwork._root.Add(vertexDA);
+        _bayesianNetwork._root.Add(vertexP);
+        _bayesianNetwork._root.Add(vertexPA);
+
+        _bayesianNetwork.V.Add(vertexA.Name, vertexA);
+        _bayesianNetwork.V.Add(vertexD.Name, vertexD);
+        _bayesianNetwork.V.Add(vertexDA.Name, vertexDA);
+        _bayesianNetwork.V.Add(vertexP.Name, vertexP);
+        _bayesianNetwork.V.Add(vertexPA.Name, vertexPA);
+        _bayesianNetwork.V.Add(vertexM.Name, vertexM);
 
         //Metodos
         _bayesianNetwork.InitialTree();
@@ -163,6 +346,21 @@ public class PreySearchFood : MonoBehaviour
         }
 
         public List<Edge> this[string index]
+        {
+            get
+            {
+                List<Edge> lstEdges = new List<Edge>();
+                foreach (var e in Edges)
+                {
+                    if (e.NodeA == index || e.NodeB == index)
+                    {
+                        lstEdges.Add(e);
+                    }
+                }
+                return lstEdges;
+            }
+        }
+        public List<Edge> this[string index, string actual]
         {
             get
             {
