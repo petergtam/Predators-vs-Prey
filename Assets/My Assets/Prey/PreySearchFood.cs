@@ -57,7 +57,7 @@ public class PreySearchFood : MonoBehaviour
             }
         }
         var tResult = Time.time - t;
-        //Debug.Log(tResult);
+        Debug.Log(tResult);
         return result.transform.position;
     }
 
@@ -65,8 +65,8 @@ public class PreySearchFood : MonoBehaviour
     {
         //return 10;
         //Datos del vecino
-        const double maxTime = 20;
-        List<Edge> lstDatosVecinos = _edges[node.GetComponent<PathNode>().name];
+        const double maxTime = 30;
+        List<Edge> lstDatosVecinos = _edges[node.GetComponent<PathNode>().name,actualNode.GetComponent<PathNode>().name];
         List<Edge> lstDatosActuales = lstDatosVecinos.Where(x => Time.time - x.Storage[3] < maxTime).ToList();
 
         //Nodo a evualuar
@@ -122,33 +122,35 @@ public class PreySearchFood : MonoBehaviour
             _bayesianNetwork.UpdateTree(vertex, vertex.Val[1]);
         }
 
-        
-        if (lstDatosVecinos != null && lstDatosActuales.Count / lstDatosVecinos.Count > .4)
+        if (lstDatosVecinos.Count > 0)
         {
-            if (lstDatosActuales.Sum(x => x.Storage[1]) > 0)
+            if (lstDatosVecinos != null && lstDatosActuales.Count / lstDatosVecinos.Count > .4)
             {
-                vertex = _bayesianNetwork.V["PA"];
-                lstValues.Add(vertex.Val[0]);
-                _bayesianNetwork.UpdateTree(vertex, vertex.Val[0]);
-            }
-            else
-            {
-                vertex = _bayesianNetwork.V["PA"];
-                lstValues.Add(vertex.Val[1]);
-                _bayesianNetwork.UpdateTree(vertex, vertex.Val[1]);
-            }
+                if (lstDatosActuales.Sum(x => x.Storage[1]) > 0)
+                {
+                    vertex = _bayesianNetwork.V["PA"];
+                    lstValues.Add(vertex.Val[0]);
+                    _bayesianNetwork.UpdateTree(vertex, vertex.Val[0]);
+                }
+                else
+                {
+                    vertex = _bayesianNetwork.V["PA"];
+                    lstValues.Add(vertex.Val[1]);
+                    _bayesianNetwork.UpdateTree(vertex, vertex.Val[1]);
+                }
 
-            if (lstDatosActuales.Sum(x => x.Storage[2]) > 0)
-            {
-                vertex = _bayesianNetwork.V["DA"];
-                lstValues.Add(vertex.Val[0]);
-                _bayesianNetwork.UpdateTree(vertex, vertex.Val[0]);
-            }
-            else
-            {
-                vertex = _bayesianNetwork.V["DA"];
-                lstValues.Add(vertex.Val[1]);
-                _bayesianNetwork.UpdateTree(vertex, vertex.Val[1]);
+                if (lstDatosActuales.Sum(x => x.Storage[2]) > 0)
+                {
+                    vertex = _bayesianNetwork.V["DA"];
+                    lstValues.Add(vertex.Val[0]);
+                    _bayesianNetwork.UpdateTree(vertex, vertex.Val[0]);
+                }
+                else
+                {
+                    vertex = _bayesianNetwork.V["DA"];
+                    lstValues.Add(vertex.Val[1]);
+                    _bayesianNetwork.UpdateTree(vertex, vertex.Val[1]);
+                }
             }
         }
         
@@ -367,9 +369,12 @@ public class PreySearchFood : MonoBehaviour
                 List<Edge> lstEdges = new List<Edge>();
                 foreach (var e in Edges)
                 {
-                    if (e.NodeA == index || e.NodeB == index)
+                    if (e.NodeA != actual && e.NodeB != actual)
                     {
-                        lstEdges.Add(e);
+                        if (e.NodeA == index || e.NodeB == index)
+                        {
+                            lstEdges.Add(e);
+                        }
                     }
                 }
                 return lstEdges;
