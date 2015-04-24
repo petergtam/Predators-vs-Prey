@@ -9,7 +9,7 @@ namespace Assets.My_Assets
     {
         #region Propiedades
 
-        public string name;
+        public new string name;
         /// <summary>
         /// Salud de la entidad
         /// </summary>

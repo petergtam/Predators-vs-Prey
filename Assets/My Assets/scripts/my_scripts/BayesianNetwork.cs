@@ -1,10 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 using LambdaMessage = System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, double>>;
 using PiMessages = System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, double>>;
 
-namespace Assets.My_Assets.scripts
+namespace Assets.My_Assets.scripts.my_scripts
 {
     public class BayesianNetworkPolyTree
     {

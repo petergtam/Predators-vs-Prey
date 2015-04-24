@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
-namespace Assets.My_Assets.scripts
+namespace Assets.My_Assets.scripts.my_scripts
 {
     class SetPICurve : FuzzySet
     {

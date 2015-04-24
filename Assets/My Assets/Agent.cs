@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace Assets.My_Assets
@@ -22,17 +21,18 @@ namespace Assets.My_Assets
         {
             if (this.name == "Pedro")
             {
+                /*
                 nn.training(GetStimulus());
                 foreach (var weight in nn.weights)
                 {
                     Console.WriteLine(weight);
-                }
+                }*/
             }
-            return StimulusEnum.Hungry;
+            //return StimulusEnum.Hungry;
             double[] lstEstimulus = GetStimulus();
-            if (lstEstimulus[1] > 0)
+            if (lstEstimulus[0] > 0)
             {
-                return StimulusEnum.LeaderShip;
+                return StimulusEnum.Fear;
             }
             else
             {
@@ -162,6 +162,7 @@ namespace Assets.My_Assets
                     lstColliders.Add(oAgent);
                 }
             }
+
             return lstColliders;
         }
 

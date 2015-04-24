@@ -1,19 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 using Assets.My_Assets;
+using UnityEngine;
 using Random = UnityEngine.Random;
+
 
 public class Prey : Agent
 {
     private TextMesh textMesh;
 
-    public static string[] names = { "Gibran", "Pedro", "Celeste", "Lea", "Ivan", "Victor", "Alberto", "Hector", "Mayra", "Orlando", "Mario", "Ruben", "Armando", "Edith", "Arturo", "Jairo"};
+    public static string[] names =
+    {
+        "Gibran", "Pedro", "Celeste", "Lea", "Ivan", "Victor", "Alberto", "Hector", "Mayra",
+        "Orlando", "Mario", "Ruben", "Armando", "Edith", "Arturo", "Jairo"
+    };
+
     public static int indice = 0;
     private NeuralNetwork nn;
 
-    void Start()
+    private void Start()
     {
         InitValue();
 
@@ -30,12 +36,15 @@ public class Prey : Agent
         name = Prey.names[indice];
         indice++;
 
-        textMesh = (TextMesh)gameObject.AddComponent("TextMesh");
-        var f = (Font)Resources.LoadAssetAtPath("Assets/My Assets/Fonts/coolvetica.ttf", typeof(Font));
+        textMesh = (TextMesh) gameObject.AddComponent("TextMesh");
+        var f = (Font) Resources.LoadAssetAtPath("Assets/My Assets/Fonts/coolvetica.ttf", typeof (Font));
         textMesh.font = f;
         textMesh.renderer.sharedMaterial = f.material;
         textMesh.text = name;
-        if (name == "Pedro") {  nn = new NeuralNetwork(); }
+        if (name == "Pedro")
+        {
+            nn = new NeuralNetwork();
+        }
 
     }
 
@@ -83,145 +92,141 @@ public class Prey : Agent
     {
         if (isLeader == true)
         {
-            if (state == States.Searching)
+            if (state == States.Searching || state == States.Hiding)
             {
-                //Calcula nueva posicion de la comida
-                Vector3 foodPosition = searchForFood();
-                if (foodPosition != Vector3.zero)
-                {
-                    nav.destination = foodPosition;
-                    state = States.Moving;
-                    order_followMe(gameObject);
-                }
+                Debug.Log(name + ": Search");
+                isNeededRun = false;
+                behavior_searching();
             }
             else if (state == States.Moving)
             {
-                //Entra en estado de viaje en grupo
-                if (IsOnRangeToStop(1f))
-                {
-                    Stop();
-                    state = States.Hunting;
-                    order_hunt(gameObject);
-                }
+                behavior_moving();
             }
             else if (state == States.Hunting)
             {
-                //Busca una nueva planta en el area en el que esta
-                if (actualFood == null)
-                {
-                    actualFood = getBestFood();
-                    if (actualFood == null)
-                    {
-                        state = States.Searching;
-                    }
-                    else
-                    {
-                        nav.destination = actualFood.transform.position;
-                    }
-                }
-                else
-                {
-                    if (DistanceFromDestination() <= DistanceToBite(true))
-                    {
-                        Stop();
-                        //Volteo a ver a la planta
-                        transform.LookAt(actualFood.transform);
-
-                        GetComponent<DinasorsAnimationCorrector>().eating();
-                        if (actualFood.GetComponent<Plant>().hp < 0)
-                        {
-                            state = States.Eating;
-                        }
-                        else
-                        {
-                            BiteEnemy(true);
-                        }
-                    }
-                }
+                behavior_hunting();
             }
             else if (state == States.Eating)
             {
-                if (actualFood == null)
-                {
-                    GetComponent<DinasorsAnimationCorrector>().idle();
-                    state = States.Searching;
-                }
-                else
-                {
-                    EatEnemy(true);
-
-                    if (actualFood.GetComponent<Plant>().flesh < 0)
-                    {
-                        GetComponent<DinasorsAnimationCorrector>().idle();
-                        state = States.Searching;
-                    }
-                }
+                behavior_eating();
             }
         }
         else
         {
             if (state == States.Following)
             {
-                nav.destination = leader.transform.position;
+                behavior_following();
             }
             else if (state == States.Waiting)
             {
-                //Esperar a que el lider tome una decicion
-                if (nav.velocity != Vector3.zero)
-                {
-                    Stop();
-                }
+                behavior_waiting();
             }
             else if (state == States.Hunting)
             {
-                if (actualFood == null)
-                {
-                    actualFood = getBestFood();
-                    if (actualFood == null)
-                    {
-                        state = States.Following;
-                    }
-                    else
-                    {
-                        nav.destination = actualFood.transform.position;
-                    }
-                }
-                else
-                {
-                    if (DistanceFromDestination() <= DistanceToBite(true))
-                    {
-                        Stop();
-
-                        //Volteo a ver a la planta
-                        transform.LookAt(actualFood.transform);
-                        GetComponent<DinasorsAnimationCorrector>().eating();
-                        if (actualFood.GetComponent<Plant>().hp < 0)
-                        {
-                            state = States.Eating;
-                        }
-                        else
-                        {
-                            BiteEnemy(true);
-                        }
-                    }
-                }
+                behavior_hunting();
             }
             else if (state == States.Eating)
             {
-                if (actualFood == null)
+                behavior_eating();
+            }
+        }
+    }
+
+    private void behavior_following()
+    {
+        nav.destination = leader.transform.position;
+    }
+
+    private void behavior_waiting()
+    {
+        //Esperar a que el lider tome una decicion
+        if (nav.velocity != Vector3.zero)
+        {
+            Stop();
+        }
+    }
+
+    private void behavior_searching()
+    {
+        //Calcula nueva posicion de la comida
+        Vector3 foodPosition = SearchForFood();
+        if (foodPosition != Vector3.zero)
+        {
+            nav.destination = foodPosition;
+            state = States.Moving;
+            order_followMe(gameObject);
+        }
+    }
+
+    private void behavior_moving()
+    {
+        //Entra en estado de viaje en grupo
+        if (IsOnRangeToStop(1f))
+        {
+            Stop();
+            state = States.Hunting;
+            order_hunt(gameObject);
+        }
+    }
+
+    private void behavior_hunting()
+    {
+        //Busca una nueva planta en el area en el que esta
+        if (actualFood == null)
+        {
+            actualFood = GetBestFood();
+            if (actualFood == null)
+            {
+                if (isLeader == true)
                 {
-                    GetComponent<DinasorsAnimationCorrector>().idle();
-                    state = States.Following;
+                    state = States.Searching;
                 }
                 else
                 {
-                    EatEnemy(true);
-                    if (actualFood.GetComponent<Plant>().flesh < 0)
-                    {
-                        GetComponent<DinasorsAnimationCorrector>().idle();
-                        state = States.Hunting;
-                    }   
+                    state = States.Following;
                 }
+            }
+            else
+            {
+                nav.destination = actualFood.transform.position;
+            }
+        }
+        else
+        {
+            if (DistanceFromDestination() <= DistanceToBite(true))
+            {
+                Stop();
+                //Volteo a ver a la planta
+                transform.LookAt(actualFood.transform);
+
+                GetComponent<DinasorsAnimationCorrector>().eating();
+                if (actualFood.GetComponent<Plant>().hp < 0)
+                {
+                    state = States.Eating;
+                }
+                else
+                {
+                    BiteEnemy(true);
+                }
+            }
+        }
+    }
+
+    private void behavior_eating()
+    {
+        if (actualFood == null)
+        {
+            GetComponent<DinasorsAnimationCorrector>().idle();
+            state = States.Searching;
+        }
+        else
+        {
+            EatEnemy(true);
+
+            if (actualFood.GetComponent<Plant>().flesh < 0)
+            {
+                GetComponent<DinasorsAnimationCorrector>().idle();
+                state = States.Hunting;
             }
         }
     }
@@ -242,8 +247,16 @@ public class Prey : Agent
 
     private void behavior_run()
     {
-        //Find a safe place
-        throw new NotImplementedException();
+        
+        if (state != States.Hiding)
+        {
+            List<Agent> lstPredators = GetColliders<Predator>();
+            var scalar = transform.position - lstPredators.First().transform.position;
+            nav.destination = transform.position + scalar;
+            state = States.Hiding;
+            isNeededRun = true;
+        }
+        
     }
 
     private void behavior_mating()
@@ -257,39 +270,42 @@ public class Prey : Agent
     }
 
     #region Ordenes del lider
-    void order_followMe(GameObject l)
+
+    private void order_followMe(GameObject l)
     {
         BroadCast("LeaderSaysFollowMe", l);
     }
 
-    void order_stop(GameObject l)
+    private void order_stop(GameObject l)
     {
         BroadCast("LeaderSaysStop", l);
     }
 
-    void order_reagrupate(GameObject l)
+    private void order_reagrupate(GameObject l)
     {
         BroadCast("LeaderSaysReagrupate", l);
     }
-    
-    void order_hunt(GameObject l)
+
+    private void order_hunt(GameObject l)
     {
         BroadCast("LeaderSaysHunt", l);
     }
 
-    void order_unsetLeader(GameObject l)
+    private void order_unsetLeader(GameObject l)
     {
         BroadCast("LeaderSaysUnsetLeader", l);
     }
 
-    void order_panic(GameObject l)
+    private void order_panic(GameObject l)
     {
         BroadCast("SaysPanic", l);
     }
+
     #endregion
 
     #region Reacciones a ordenes del lider
-    void LeaderSaysFollowMe(GameObject l)
+
+    private void LeaderSaysFollowMe(GameObject l)
     {
         if (state != States.Following && 0 < hp)
         {
@@ -298,13 +314,13 @@ public class Prey : Agent
                 if (!IsMe(leader))
                 {
                     state = States.Following;
-                    order_followMe(l);	//Reply the message to others
+                    order_followMe(l); //Reply the message to others
                 }
             }
         }
     }
 
-    void LeaderSaysStop(GameObject l)
+    private void LeaderSaysStop(GameObject l)
     {
         if (state != States.Waiting && 0 < hp)
         {
@@ -313,13 +329,13 @@ public class Prey : Agent
                 if (!IsMe(leader))
                 {
                     state = States.Waiting;
-                    order_stop(l);	//Reply the message to others
+                    order_stop(l); //Reply the message to others
                 }
             }
         }
     }
 
-    void LeaderSaysReagrupate(GameObject l)
+    private void LeaderSaysReagrupate(GameObject l)
     {
         if (state != States.Reagruping && 0 < hp)
         {
@@ -329,13 +345,13 @@ public class Prey : Agent
                 {
                     state = States.Reagruping;
                     nav.destination = Dispersal(l.transform.position);
-                    order_reagrupate(l);	//Reply the message to others
+                    order_reagrupate(l); //Reply the message to others
                 }
             }
         }
     }
 
-    void LeaderSaysHunt(GameObject l)
+    private void LeaderSaysHunt(GameObject l)
     {
         if (state != States.Hunting && 0 < hp)
         {
@@ -345,13 +361,13 @@ public class Prey : Agent
                 {
                     state = States.Hunting;
                     nav.destination = l.GetComponent<NavMeshAgent>().destination;
-                    order_hunt(l);	//Reply the message to others
+                    order_hunt(l); //Reply the message to others
                 }
             }
         }
     }
 
-    void LeaderSaysUnsetLeader(GameObject l)
+    private void LeaderSaysUnsetLeader(GameObject l)
     {
         if (leader != null && 0 < hp)
         {
@@ -361,21 +377,23 @@ public class Prey : Agent
                 {
                     state = States.Hiding;
                     leader = null;
-                    order_unsetLeader(l);	//Reply the message to others
+                    order_unsetLeader(l); //Reply the message to others
                 }
             }
         }
     }
 
-    void SaysPanic(GameObject l)
+    private void SaysPanic(GameObject l)
     {
         if (0 < hp)
             state = States.Hiding;
 
     }
+
     #endregion
 
     #region Liderazgo
+
     /// <summary>
     /// Retorna la capacidad de liderazgo de la unidad
     /// </summary>
@@ -383,10 +401,10 @@ public class Prey : Agent
     public float getLeadershipStat()
     {
         return
-            (this.hp / 100) +
-                (this.speed / 3.0f) +
-                ((float)this.stamina / 100) +
-                ((this.lifetime * 2) / 10000);
+            (this.hp/100) +
+            (this.speed/3.0f) +
+            ((float) this.stamina/100) +
+            ((this.lifetime*2)/10000);
     }
 
     /// <summary>
@@ -409,30 +427,32 @@ public class Prey : Agent
             state = States.Waiting;
         }
     }
+
     #endregion
 
     #region Buscar comida
+
     /// <summary>
     /// Retorna la mejor planta disponible
     /// </summary>
     /// <returns>Retorna la mejor planta disponible</returns>
-    GameObject getBestFood()
+    private GameObject GetBestFood()
     {
-        List<GameObject> lstFood = getNearbyFood();
+        List<GameObject> lstFood = GetNearbyFood();
         if (lstFood.Count == 0)
             return null;
-        return lstFood[Random.Range(0,lstFood.Count-1)];
+        return lstFood[Random.Range(0, lstFood.Count - 1)];
     }
 
     /// <summary>
     /// Obtiene los objetos "COMIDA", cercanos a la posicion del objeto
     /// </summary>
     /// <returns>Retorna la lista de comida</returns>
-    protected List<GameObject> getNearbyFood()
+    protected List<GameObject> GetNearbyFood()
     {
         List<GameObject> lstFood = new List<GameObject>();
 
-        Collider[] hitColliders = Physics.OverlapSphere(transform.position, comRange * 2.5f);
+        Collider[] hitColliders = Physics.OverlapSphere(transform.position, comRange*2.5f);
         foreach (Collider e in hitColliders)
         {
             Plant oPlant = e.GetComponent<Plant>();
@@ -448,9 +468,9 @@ public class Prey : Agent
     /// Llama al modulo de logica difusa para encontrar el area mas conveniente para encontrr comida
     /// </summary>
     /// <returns>Regresa ruta de la comida</returns>
-    private Vector3 searchForFood()
+    private Vector3 SearchForFood()
     {
-        return GetComponent<PreySearchFood>().searchForFood(transform.position);
+        return GetComponent<PreySearchFood>().SearchForFood(transform.position);
     }
     #endregion
 }

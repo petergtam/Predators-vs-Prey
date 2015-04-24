@@ -1,18 +1,16 @@
-﻿using System;
+﻿using Assets.My_Assets;
 using UnityEngine;
-using Assets.My_Assets;
-using Random = UnityEngine.Random;
 
 public class Predator : Agent
 {
     private TextMesh textMesh;
-    public static string[] names = { "Dr Mario", "Dr Andres", "Dr Mellado", "Dr Felix", "Dr Raul", "Ing. Elvia", "Dr "};
+    public static string[] names = {"Dr Mario", "Dr Andres", "Dr Mellado", "Dr Felix", "Dr Raul", "Ing. Elvia", "Dr "};
     public static int indice = 0;
 
-    void Start()
+    private void Start()
     {
         InitValue();
-        
+
         state = States.ChoosingLeader;
 
         //Si no cuenta con eleccion de lider, el es el lider
@@ -24,25 +22,26 @@ public class Predator : Agent
         }
 
         name = Predator.names[indice];
-        indice++;   
-        textMesh = (TextMesh)gameObject.AddComponent("TextMesh");
-        var f = (Font)Resources.LoadAssetAtPath("Assets/My Assets/Fonts/coolvetica.ttf", typeof(Font));
+        indice++;
+        textMesh = (TextMesh) gameObject.AddComponent("TextMesh");
+        var f = (Font) Resources.LoadAssetAtPath("Assets/My Assets/Fonts/coolvetica.ttf", typeof (Font));
         textMesh.font = f;
         textMesh.renderer.sharedMaterial = f.material;
         textMesh.text = name;
     }
-	
-    void Update()
+
+    private void Update()
     {
         if (!Metabolism())
             return;
 
         if (isNeededRun)
-        {//TODO: Nunca cambia entre correr y caminar las presas
-            nav.speed = (float)(speed * ( (stamina < 50 ? 50: stamina)  / 100.0));
+        {
+//TODO: Nunca cambia entre correr y caminar las presas
+            nav.speed = (float) (speed*((stamina < 50 ? 50 : stamina)/100.0));
         }
         else
-            nav.speed = (float)((speed / 3.0) * ((stamina < 50 ? 50 : stamina) / 100.0));
+            nav.speed = (float) ((speed/3.0)*((stamina < 50 ? 50 : stamina)/100.0));
 
         if (leader == null && state != States.ChoosingLeader)
         {
@@ -63,14 +62,16 @@ public class Predator : Agent
 
                 //senseForSomething();
                 if (state == States.Searching)
-                {			//Entra en estado para buscar comida
+                {
+                    //Entra en estado para buscar comida
                     ////Debug.Log("Buscando por lugar con comida");
                     behavior_leader_searching();
                     //Debug.Log("LEader searching");
 
                 }
                 else if (state == States.Following)
-                {	//Entra en estado de viaje en grupo
+                {
+                    //Entra en estado de viaje en grupo
                     ////Debug.Log("Viajando lugar con comida");
                     behavior_leader_following();
                     //Debug.Log("LEader Follow");
@@ -94,12 +95,14 @@ public class Predator : Agent
             else
             {
                 if (state == States.Following)
-                {			//Seguir al lider
+                {
+                    //Seguir al lider
                     behavior_follower_following();
 
                 }
                 else if (state == States.Waiting)
-                {		//Esperar a que el lider tome una decicion
+                {
+                    //Esperar a que el lider tome una decicion
                     behavior_follower_waiting();
 
                 }
@@ -127,7 +130,7 @@ public class Predator : Agent
     ///////////////// Comportamiento del lider ///////////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    void behavior_leader_searching()
+    private void behavior_leader_searching()
     {
         //Calcula nueva posicion de la comida
         Vector3 foodPosition = searchForFood();
@@ -139,7 +142,7 @@ public class Predator : Agent
         }
     }
 
-    void behavior_leader_following()
+    private void behavior_leader_following()
     {
         if (IsOnRangeToStop())
         {
@@ -164,7 +167,7 @@ public class Predator : Agent
         }
     }
 
-    void behavior_leader_Hunting()
+    private void behavior_leader_Hunting()
     {
         if (actualFood == null)
         {
@@ -193,7 +196,7 @@ public class Predator : Agent
         }
     }
 
-    void behavior_leader_Eating()
+    private void behavior_leader_Eating()
     {
         if (actualFood == null)
         {
@@ -220,7 +223,7 @@ public class Predator : Agent
     ///////////////// Comportamiento del Seguidor ////////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    void behavior_follower_following()
+    private void behavior_follower_following()
     {
         nav.destination = leader.transform.position;
         /*if( leader.GetComponent<Predator>().state != States.Following ){
@@ -231,7 +234,7 @@ public class Predator : Agent
         }*/
     }
 
-    void behavior_follower_waiting()
+    private void behavior_follower_waiting()
     {
         if (nav.velocity != Vector3.zero)
         {
@@ -239,7 +242,7 @@ public class Predator : Agent
         }
     }
 
-    void behavior_follower_reagruping()
+    private void behavior_follower_reagruping()
     {
         if (IsOnRangeToStop(3f))
         {
@@ -251,7 +254,7 @@ public class Predator : Agent
         }
     }
 
-    void behavior_follower_Hunting()
+    private void behavior_follower_Hunting()
     {
         if (actualFood == null)
         {
@@ -283,7 +286,7 @@ public class Predator : Agent
         }
     }
 
-    void behavior_follower_Eating()
+    private void behavior_follower_Eating()
     {
         if (actualFood == null)
         {
@@ -306,26 +309,26 @@ public class Predator : Agent
         }
     }
 
-    
+
     ///////////////////////////////////////////////////////////////
     ///////////////// Ordenes del lider ///////////////////////////
     ///////////////////////////////////////////////////////////////
-    void order_followMe(GameObject l)
+    private void order_followMe(GameObject l)
     {
         BroadCast("LeaderSaysFollowMe", l);
     }
 
-    void order_stop(GameObject l)
+    private void order_stop(GameObject l)
     {
         BroadCast("LeaderSaysStop", l);
     }
 
-    void order_reagrupate(GameObject l)
+    private void order_reagrupate(GameObject l)
     {
         BroadCast("LeaderSaysReagrupate", l);
     }
 
-    void order_hunt(GameObject l)
+    private void order_hunt(GameObject l)
     {
         BroadCast("LeaderSaysHunt", l);
     }
@@ -333,7 +336,7 @@ public class Predator : Agent
     ///////////////////////////////////////////////////////////////
     ///////////////// Reacciones a ordenes del lider //////////////
     ///////////////////////////////////////////////////////////////
-    void LeaderSaysFollowMe(GameObject l)
+    private void LeaderSaysFollowMe(GameObject l)
     {
         if (state != States.Following && 0 < hp)
         {
@@ -342,13 +345,13 @@ public class Predator : Agent
                 if (!IsMe(leader))
                 {
                     state = States.Following;
-                    order_followMe(l);	//Reply the message to others
+                    order_followMe(l); //Reply the message to others
                 }
             }
         }
     }
 
-    void LeaderSaysStop(GameObject l)
+    private void LeaderSaysStop(GameObject l)
     {
         if (state != States.Waiting && 0 < hp)
         {
@@ -357,13 +360,13 @@ public class Predator : Agent
                 if (!IsMe(leader))
                 {
                     state = States.Waiting;
-                    order_stop(l);	//Reply the message to others
+                    order_stop(l); //Reply the message to others
                 }
             }
         }
     }
 
-    void LeaderSaysReagrupate(GameObject l)
+    private void LeaderSaysReagrupate(GameObject l)
     {
         if (state != States.Reagruping && 0 < hp)
         {
@@ -373,13 +376,13 @@ public class Predator : Agent
                 {
                     state = States.Reagruping;
                     nav.destination = Dispersal(l.transform.position);
-                    order_reagrupate(l);	//Reply the message to others
+                    order_reagrupate(l); //Reply the message to others
                 }
             }
         }
     }
 
-    void LeaderSaysHunt(GameObject l)
+    private void LeaderSaysHunt(GameObject l)
     {
         if (state != States.Hunting && 0 < hp)
         {
@@ -389,7 +392,7 @@ public class Predator : Agent
                 {
                     state = States.Hunting;
                     nav.destination = l.GetComponent<NavMeshAgent>().destination;
-                    order_hunt(l);	//Reply the message to others
+                    order_hunt(l); //Reply the message to others
                 }
             }
         }
@@ -399,29 +402,32 @@ public class Predator : Agent
      * getLeadershipStat
      * Retorna la capacidad de liderazgo de la unidad
      */
+
     public float getLeadershipStat()
     {
         return
-            (this.hp / 100) +
-                (this.speed / 3) +
-                ((float)this.stamina / 100) +
-                ((this.lifetime * 2) / 10000);
+            (this.hp/100) +
+            (this.speed/3) +
+            ((float) this.stamina/100) +
+            ((this.lifetime*2)/10000);
     }
 
     /**
      *	Fijar el objeto lider
      */
+
     public void setLeader(GameObject l)
     {
         leader = l;
         nav.avoidancePriority = 1;
         state = States.Searching;
     }
-    
+
     /**
      **Recive un arreglo de GameObject y regresa el mas cercano a la posicion actual
      */
-    GameObject getNeardest(GameObject[] objects)
+
+    private GameObject getNeardest(GameObject[] objects)
     {
         if (objects == null)
             return null;
@@ -449,14 +455,16 @@ public class Predator : Agent
     /**
      *	Obtiene los objetos "COMIDA", cercanos a la posicion del objeto
      */
-    GameObject[] getNearbyFood()
+
+    private GameObject[] getNearbyFood()
     {
         int foodCounter = 0;
-        Collider[] hitColliders = Physics.OverlapSphere(transform.position, comRange * 2.5f);
+        Collider[] hitColliders = Physics.OverlapSphere(transform.position, comRange*2.5f);
         for (int i = 0; i < hitColliders.Length; i++)
         {
             if (!IsMe(hitColliders[i].gameObject))
-            { //No me lo envio a mi
+            {
+                //No me lo envio a mi
                 if (hitColliders[i].GetComponent<Prey>() != null)
                 {
                     foodCounter++;
@@ -467,7 +475,8 @@ public class Predator : Agent
         for (int i = 0; i < hitColliders.Length; i++)
         {
             if (!IsMe(hitColliders[i].gameObject))
-            { //No me lo envio a mi
+            {
+                //No me lo envio a mi
                 if (hitColliders[i].GetComponent<Prey>() != null)
                 {
                     ret[--foodCounter] = hitColliders[i].gameObject;
@@ -481,7 +490,8 @@ public class Predator : Agent
     /*
      * Retorna la mejor presa posible
      */
-    GameObject getBestFood()
+
+    private GameObject getBestFood()
     {
         GameObject[] g = getNearbyFood();
         if (g.Length == 0)
@@ -499,12 +509,13 @@ public class Predator : Agent
     /*
     *	Llama al modulo de logica difusa para encontrar el area mas conveniente para encontrr comida
     */
+
     private Vector3 searchForFood()
     {
-        return GetComponent<PredatorSearchFood>().searchForFood(transform.position);
+        return GetComponent<PredatorSearchFood>().SearchForFood(transform.position);
     }
 
-    private bool hungry()//TODO: Cambiar estos valores.
+    private bool hungry() //TODO: Cambiar estos valores.
     {
         if (stamina < 120f || hp < 100)
             return true;
