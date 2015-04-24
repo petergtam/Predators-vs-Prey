@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Assets.My_Assets;
 using UnityEngine;
@@ -65,7 +67,7 @@ public class Prey : Agent
             case StimulusEnum.Fear:
                 if (isLeader == true)
                 {
-                    behavior_run();
+                    behavior_fear();
                 }
                 else
                 {
@@ -87,12 +89,22 @@ public class Prey : Agent
         }
 
     }
-
+    #region Hungry Stimulus
+    private int i = 0;
     private void behavior_hungry()
     {
         if (isLeader == true)
         {
-            if (state == States.Searching || state == States.Hiding)
+            if (state == States.Hiding)
+            {
+                i++;
+                if (i > 200)
+                {
+                    i = 0;
+                    state = States.Searching;
+                }
+            }
+            else if (state == States.Searching)
             {
                 Debug.Log(name + ": Search");
                 isNeededRun = false;
@@ -231,6 +243,49 @@ public class Prey : Agent
         }
     }
 
+    /// <summary>
+    /// Retorna la mejor planta disponible
+    /// </summary>
+    /// <returns>Retorna la mejor planta disponible</returns>
+    private GameObject GetBestFood()
+    {
+        List<GameObject> lstFood = GetNearbyFood();
+        if (lstFood.Count == 0)
+            return null;
+        return lstFood[Random.Range(0, lstFood.Count - 1)];
+    }
+
+    /// <summary>
+    /// Obtiene los objetos "COMIDA", cercanos a la posicion del objeto
+    /// </summary>
+    /// <returns>Retorna la lista de comida</returns>
+    protected List<GameObject> GetNearbyFood()
+    {
+        List<GameObject> lstFood = new List<GameObject>();
+
+        Collider[] hitColliders = Physics.OverlapSphere(transform.position, comRange * 2.5f);
+        foreach (Collider e in hitColliders)
+        {
+            Plant oPlant = e.GetComponent<Plant>();
+            if (oPlant != null)
+            {
+                lstFood.Add(e.gameObject);
+            }
+        }
+        return lstFood;
+    }
+
+    /// <summary>
+    /// Llama al modulo de logica difusa para encontrar el area mas conveniente para encontrr comida
+    /// </summary>
+    /// <returns>Regresa ruta de la comida</returns>
+    private Vector3 SearchForFood()
+    {
+        return GetComponent<PreySearchFood>().SearchForFood(transform.position);
+    }
+    #endregion
+
+    #region Leader Stimulus
     private void behavior_select_leader()
     {
         if (state != States.ChoosingLeader)
@@ -245,20 +300,62 @@ public class Prey : Agent
         }
     }
 
-    private void behavior_run()
+    /// <summary>
+    /// Retorna la capacidad de liderazgo de la unidad
+    /// </summary>
+    /// <returns>Valor de liderazgo</returns>
+    public float getLeadershipStat()
     {
-        
+        return
+            (this.hp / 100) +
+            (this.speed / 3.0f) +
+            ((float)this.stamina / 100) +
+            ((this.lifetime * 2) / 10000);
+    }
+
+    /// <summary>
+    /// Fijar el objeto lider
+    /// </summary>
+    /// <param name="l">Lider del objeto</param>
+    public void setLeader(GameObject l)
+    {
+        leader = l;
+        nav.avoidancePriority = 1;
+
+        if (IsMyLeader(gameObject))
+        {
+            isLeader = true;
+            state = States.Searching;
+        }
+        else
+        {
+            isLeader = false;
+            state = States.Waiting;
+        }
+    }
+    #endregion
+
+    #region Fear Stimulus
+    private void behavior_fear()
+    {
         if (state != States.Hiding)
         {
             List<Agent> lstPredators = GetColliders<Predator>();
-            var scalar = transform.position - lstPredators.First().transform.position;
-            nav.destination = transform.position + scalar;
+            var scalar = 3 * (transform.position - lstPredators.First().transform.position);
+            nav.destination = (transform.position + scalar);
             state = States.Hiding;
             isNeededRun = true;
         }
-        
     }
 
+    public IEnumerator xx()
+    {
+        yield return new WaitForSeconds(50f);
+    }
+
+    #endregion
+
+    #region Mating Stimulus
     private void behavior_mating()
     {
         //Find couple
@@ -268,6 +365,7 @@ public class Prey : Agent
         //Born a new child
         throw new NotImplementedException();
     }
+    #endregion
 
     #region Ordenes del lider
 
@@ -390,87 +488,5 @@ public class Prey : Agent
 
     }
 
-    #endregion
-
-    #region Liderazgo
-
-    /// <summary>
-    /// Retorna la capacidad de liderazgo de la unidad
-    /// </summary>
-    /// <returns>Valor de liderazgo</returns>
-    public float getLeadershipStat()
-    {
-        return
-            (this.hp/100) +
-            (this.speed/3.0f) +
-            ((float) this.stamina/100) +
-            ((this.lifetime*2)/10000);
-    }
-
-    /// <summary>
-    /// Fijar el objeto lider
-    /// </summary>
-    /// <param name="l">Lider del objeto</param>
-    public void setLeader(GameObject l)
-    {
-        leader = l;
-        nav.avoidancePriority = 1;
-
-        if (IsMyLeader(gameObject))
-        {
-            isLeader = true;
-            state = States.Searching;
-        }
-        else
-        {
-            isLeader = false;
-            state = States.Waiting;
-        }
-    }
-
-    #endregion
-
-    #region Buscar comida
-
-    /// <summary>
-    /// Retorna la mejor planta disponible
-    /// </summary>
-    /// <returns>Retorna la mejor planta disponible</returns>
-    private GameObject GetBestFood()
-    {
-        List<GameObject> lstFood = GetNearbyFood();
-        if (lstFood.Count == 0)
-            return null;
-        return lstFood[Random.Range(0, lstFood.Count - 1)];
-    }
-
-    /// <summary>
-    /// Obtiene los objetos "COMIDA", cercanos a la posicion del objeto
-    /// </summary>
-    /// <returns>Retorna la lista de comida</returns>
-    protected List<GameObject> GetNearbyFood()
-    {
-        List<GameObject> lstFood = new List<GameObject>();
-
-        Collider[] hitColliders = Physics.OverlapSphere(transform.position, comRange*2.5f);
-        foreach (Collider e in hitColliders)
-        {
-            Plant oPlant = e.GetComponent<Plant>();
-            if (oPlant != null)
-            {
-                lstFood.Add(e.gameObject);
-            }
-        }
-        return lstFood;
-    }
-
-    /// <summary>
-    /// Llama al modulo de logica difusa para encontrar el area mas conveniente para encontrr comida
-    /// </summary>
-    /// <returns>Regresa ruta de la comida</returns>
-    private Vector3 SearchForFood()
-    {
-        return GetComponent<PreySearchFood>().SearchForFood(transform.position);
-    }
     #endregion
 }

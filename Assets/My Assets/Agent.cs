@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor;
 using UnityEngine;
 
 namespace Assets.My_Assets
@@ -15,11 +16,16 @@ namespace Assets.My_Assets
             Mating
         }
 
+        /// <summary>
+        /// Comida actual
+        /// </summary>
+        public GameObject actualPredator;
+
         #region Estimulos
 
         public StimulusEnum SelectStimulu(NeuralNetwork nn)
         {
-            if (this.name == "Pedro")
+            if (name == "Pedro")
             {
                 /*
                 nn.training(GetStimulus());
@@ -174,6 +180,15 @@ namespace Assets.My_Assets
         {
             bool metabolism = base.Metabolism();
 
+            /*
+            if (actualFood != null)
+            {
+                if (Math.Abs(actualFood.transform.position.magnitude - transform.position.magnitude) > 2*comRange)
+                {
+                    actualFood = null;
+                }
+            }*/
+
             //Cambiar tamaño
             const float scale = 0.5f;
             if (metabolism)
@@ -213,6 +228,71 @@ namespace Assets.My_Assets
                 }
             }
             return lstHerd;
+        }
+
+        public void OnDrawGizmos()
+        {
+            var classType = GetType();
+            if (classType == typeof(Prey))
+            {
+                if (GetColliders<Predator>().Count > 0)
+                {
+                    Gizmos.color = new Color(255, 0, 0);
+                }
+                else
+                {
+                    Gizmos.color = new Color(255, 255, 0);
+                }
+            }
+            else
+            {
+                if (GetColliders<Prey>().Count > 0)
+                {
+                    Gizmos.color = new Color(255, 0, 0);
+                }
+                else
+                {
+                    Gizmos.color = new Color(0, 255, 255);
+                }
+            }
+            //Gizmos.DrawWireSphere(transform.position, comRange);
+            if (nav != null)
+            {
+                Gizmos.DrawLine(transform.position, nav.destination);
+            }
+        }
+
+        public void OnDrawGizmosSelected()
+        {
+            var classType = GetType();
+            if (classType == typeof(Prey))
+            {
+                if (GetColliders<Predator>().Count > 0)
+                {
+                    Gizmos.color = new Color(255, 0, 0, .2f);
+                }
+                else
+                {
+                    Gizmos.color = new Color(255, 255, 0, .2f);
+                }
+            }
+            else
+            {
+                if (GetColliders<Prey>().Count > 0)
+                {
+                    Gizmos.color = new Color(255, 0, 0, .2f);
+                }
+                else
+                {
+                    Gizmos.color = new Color(0, 255, 255, .2f);
+                }
+            }
+            Gizmos.DrawSphere(transform.position, comRange);
+
+            if (nav != null)
+            {
+                Gizmos.DrawLine(transform.position, nav.transform.position);
+            }
         }
     }
 }

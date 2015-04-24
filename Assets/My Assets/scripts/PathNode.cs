@@ -11,7 +11,13 @@ public class PathNode : MonoBehaviour {
 	private TextMesh textMesh;
 	private Light lights;
 	private int maxTrees;
-	
+
+    public void OnDrawGizmosSelected()
+    {
+        // Draw a yellow sphere at the transform's position
+        Gizmos.color = new Color(255,255,0,.2f);
+        Gizmos.DrawWireSphere(transform.position, ratius);
+    }
 
 	// Use this for initialization
 	void Start () {

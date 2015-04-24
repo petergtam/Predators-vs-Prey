@@ -196,7 +196,7 @@ namespace Assets.My_Assets
             state = States.Die;
             GetComponent<DinasorsAnimationCorrector>().die();
             defense = 0;
-            if (IsMyLeader(gameObject) || isLeader == true)
+            if ((IsMyLeader(gameObject) || isLeader == true) && gameObject.transform.Find("leaderLigth") != null)
             {
                 Destroy(gameObject.transform.Find("leaderLigth").gameObject);
             }
