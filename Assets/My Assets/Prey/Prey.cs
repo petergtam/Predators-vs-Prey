@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using Assets.My_Assets;
+using Assets.My_Assets.scripts;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -12,30 +13,34 @@ public class Prey : Agent
 {
     private TextMesh textMesh;
 
-    public static string[] names =
-    {
-        "Gibran", "Pedro", "Celeste", "Lea", "Ivan", "Victor", "Alberto", "Hector", "Mayra",
-        "Orlando", "Mario", "Ruben", "Armando", "Edith", "Arturo", "Jairo"
-    };
 
-    public static int indice = 0;
-    private NeuralNetwork nn;
 
-    private void Start()
+	public static string[] names =
+	{
+		"Gibran", "Pedro", "Celeste", "Lea", "Ivan", "Victor", "Alberto", "Hector", "Mayra",
+		"Orlando", "Mario", "Ruben", "Armando", "Edith", "Arturo", "Jairo"
+	};
+	public int herdid ;
+	public static int indice = 0;
+	private NeuralNetwork nn;
+
+    void Awake()
     {
         InitValue();
 
         state = States.ChoosingLeader;
 
         //Si no cuenta con eleccion de lider, el es el lider
-        if (GetComponent<PredatorLeaderChoosing>() == null)
+        /*if (GetComponent<LeaderSelectorPrey>() == null)
             setLeader(gameObject);
         else
         {
-            GetComponent<PredatorLeaderChoosing>().choose();
-        }
-
+            GetComponent<LeaderSelectorPrey>().;
+        }*/
+		//setLeader(gameObject);
         name = Prey.names[indice];
+		//setLeader (gameObject);
+
         indice++;
 
         textMesh = (TextMesh) gameObject.AddComponent("TextMesh");
@@ -43,6 +48,7 @@ public class Prey : Agent
         textMesh.font = f;
         textMesh.renderer.sharedMaterial = f.material;
         textMesh.text = name;
+		//getNewLeader();
         if (name == "Pedro")
         {
             nn = new NeuralNetwork();
@@ -54,7 +60,6 @@ public class Prey : Agent
     {
         if (!Metabolism())
             return;
-
         nav.speed = Velocidad(isNeededRun);
 
         StimulusEnum stimulus = SelectStimulu(nn);
@@ -295,39 +300,41 @@ public class Prey : Agent
     {
         if (state != States.ChoosingLeader)
         {
-            state = States.ChoosingLeader;
-            if (GetComponent<PreyLeaderChoosing>() == null)
-                setLeader(gameObject);
-            else
-            {
-                GetComponent<PreyLeaderChoosing>().choose();
-            }
+            //state = States.ChoosingLeader;
+			//getNewLeader();
         }
     }
 
-    /// <summary>
-    /// Retorna la capacidad de liderazgo de la unidad
-    /// </summary>
-    /// <returns>Valor de liderazgo</returns>
-    public float getLeadershipStat()
-    {
-        return
-            (this.hp / 100) +
-            (this.speed / 3.0f) +
-            ((float)this.stamina / 100) +
-            ((this.lifetime * 2) / 10000);
-    }
-
-    /// <summary>
-    /// Fijar el objeto lider
-    /// </summary>
-    /// <param name="l">Lider del objeto</param>
-    public void setLeader(GameObject l)
-    {
-        leader = l;
-        nav.avoidancePriority = 1;
-
-        if (IsMyLeader(gameObject))
+	/// <summary>
+	/// Retorna la capacidad de liderazgo de la unidad
+	/// </summary>
+	/// <returns>Valor de liderazgo</returns>
+	public float getLeadershipStat()
+	{
+		return
+			(this.hp / 100) +
+				(this.speed / 3.0f) +
+				((float)this.stamina / 100) +
+				((this.lifetime * 2) / 10000);
+	}
+	
+	/// <summary>
+	/// Fijar el objeto lider
+	/// </summary>
+	/// <param name="l">Lider del objeto</param>
+	public void setLeader(GameObject l)
+	{
+		if( nav != null )
+			nav.avoidancePriority = 1;
+		if (this.isLeader) {
+			isLeader = true;
+			leader = gameObject;
+			state = States.Searching;
+		} else {
+			leader = l;
+			state = States.Waiting;
+		}
+		/*if (IsMyLeader(gameObject))
         {
             isLeader = true;
             state = States.Searching;
@@ -336,9 +343,9 @@ public class Prey : Agent
         {
             isLeader = false;
             state = States.Waiting;
-        }
-    }
-    #endregion
+        }*/
+	}
+	#endregion
 
     #region Fear Stimulus
     private void behavior_fear()
@@ -480,5 +487,47 @@ public class Prey : Agent
             }
         }
     }
+
+    private void SaysPanic(GameObject l)
+    {
+        if (0 < hp)
+            state = States.Hiding;
+    }
     #endregion
+
+    #region Liderazgo
+
+	public void getNewLeader(List<Prey> herd){
+
+		Prey newLeader = GetComponent<LeaderSelectorPrey>().getLeader(herd);
+		foreach( Prey p in herd ){
+				p.setLeader(newLeader.gameObject);
+				p.leader = this.gameObject;
+				if(p.gameObject.transform.Find("leaderLigth") != null){
+					Destroy(p.gameObject.transform.Find("leaderLigth").gameObject);
+				}
+				p.isLeader=false;
+		}
+		newLeader.isLeader = true;
+		newLeader.setLeader (newLeader.gameObject);
+		GameObject brigth = new GameObject("leaderLigth");
+		brigth.AddComponent(typeof(Light));							//se le agrega la luz
+		
+		brigth.transform.parent = newLeader.gameObject.transform;							//Se fija a la entidad
+		
+		
+		brigth.light.type = LightType.Spot;								//Se elije el tipo de luz SPOT
+		
+		//Se pone la mira hacia abajo
+		brigth.transform.position = brigth.transform.parent.position + new Vector3(0, 1, 0);
+		brigth.transform.rotation = Quaternion.Euler(new Vector3(90, 0, 0));
+		
+		//Color, Alcance, Dispercion
+		brigth.light.color = Color.white;
+		brigth.light.intensity = 2;
+		brigth.light.range = 50F;
+		brigth.light.spotAngle = 180f;
+		
+	}
+	#endregion
 }

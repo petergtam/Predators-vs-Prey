@@ -1,29 +1,43 @@
 ﻿using System;
+<<<<<<< HEAD
 using Assets.My_Assets;
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+=======
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using Assets.My_Assets;
+using Assets.My_Assets.scripts;
+using Random = UnityEngine.Random;
+>>>>>>> 6cb12452dd10837de723f2ffd895c416cd8f37b2
 
 public class Predator : Agent
 {
     private TextMesh textMesh;
     public static string[] names = {"Dr Mario", "Dr Andres", "Dr Mellado", "Dr Felix", "Dr Raul", "Ing. Elvia", "Dr "};
     public static int indice = 0;
+<<<<<<< HEAD
     private NeuralNetwork nn;
 
     private void Start()
+=======
+	public int herdid;
+    void Awake()
+>>>>>>> 6cb12452dd10837de723f2ffd895c416cd8f37b2
     {
         InitValue();
 
         state = States.ChoosingLeader;
 
         //Si no cuenta con eleccion de lider, el es el lider
-        if (GetComponent<PredatorLeaderChoosing>() == null)
+        /*if (GetComponent<PredatorLeaderChoosing>() == null)
             setLeader(gameObject);
         else
         {
             GetComponent<PredatorLeaderChoosing>().choose();
-        }
+        }*/
 
         name = Predator.names[indice];
         indice++;
@@ -473,5 +487,192 @@ public class Predator : Agent
             }
         }
     }
+<<<<<<< HEAD
     #endregion
+=======
+
+    /*
+     * getLeadershipStat
+     * Retorna la capacidad de liderazgo de la unidad
+     */
+
+    public float getLeadershipStat()
+    {
+        return
+            (this.hp/100) +
+            (this.speed/3) +
+            ((float) this.stamina/100) +
+            ((this.lifetime*2)/10000);
+    }
+
+    /**
+     *	Fijar el objeto lider
+     */
+
+    public void setLeader(GameObject l)
+    {
+		if( nav != null )
+			nav.avoidancePriority = 1;
+		if (this.isLeader) {
+			isLeader = true;
+			leader = gameObject;
+			state = States.Searching;
+		} else {
+			leader = l;
+			state = States.Waiting;
+		}
+		/*if (IsMyLeader(gameObject))
+        {
+            isLeader = true;
+            state = States.Searching;
+        }
+        else
+        {
+            isLeader = false;
+            state = States.Waiting;
+        }*/
+
+    }
+
+    /**
+     **Recive un arreglo de GameObject y regresa el mas cercano a la posicion actual
+     */
+
+    private GameObject getNeardest(GameObject[] objects)
+    {
+        if (objects == null)
+            return null;
+        if (objects.Length == 0)
+        {
+            ////Debug.Log("GetNeardes: Lista vacia");
+            return null;
+        }
+        GameObject ret = objects[0];
+        float distMin, distTemp;
+        distMin = Vector3.Distance(transform.position, ret.transform.position);
+        for (int i = 1; i < objects.Length; i++)
+        {
+            distTemp = Vector3.Distance(transform.position, objects[i].transform.position);
+            if (distTemp < distMin)
+            {
+                distMin = distTemp;
+                ret = objects[i];
+            }
+        }
+        return ret;
+    }
+
+
+    /**
+     *	Obtiene los objetos "COMIDA", cercanos a la posicion del objeto
+     */
+
+    private GameObject[] getNearbyFood()
+    {
+        int foodCounter = 0;
+        Collider[] hitColliders = Physics.OverlapSphere(transform.position, comRange*2.5f);
+        for (int i = 0; i < hitColliders.Length; i++)
+        {
+            if (!IsMe(hitColliders[i].gameObject))
+            {
+                //No me lo envio a mi
+                if (hitColliders[i].GetComponent<Prey>() != null)
+                {
+                    foodCounter++;
+                }
+            }
+        }
+        GameObject[] ret = new GameObject[foodCounter];
+        for (int i = 0; i < hitColliders.Length; i++)
+        {
+            if (!IsMe(hitColliders[i].gameObject))
+            {
+                //No me lo envio a mi
+                if (hitColliders[i].GetComponent<Prey>() != null)
+                {
+                    ret[--foodCounter] = hitColliders[i].gameObject;
+                }
+            }
+        }
+        return ret;
+    }
+
+
+    /*
+     * Retorna la mejor presa posible
+     */
+
+    private GameObject getBestFood()
+    {
+        GameObject[] g = getNearbyFood();
+        if (g.Length == 0)
+            return null;
+        for (int i = 0; i < g.Length; i++)
+        {
+            if (g[i].GetComponent<Prey>().hp <= 0)
+                return g[i];
+        }
+        //return g [Random.Range (0, g.Length - 1)];
+        return getNeardest(g);
+    }
+
+
+    /*
+    *	Llama al modulo de logica difusa para encontrar el area mas conveniente para encontrr comida
+    */
+
+    private Vector3 searchForFood()
+    {
+        return GetComponent<PredatorSearchFood>().SearchForFood(transform.position);
+    }
+
+    private bool hungry() //TODO: Cambiar estos valores.
+    {
+        if (stamina < 120f || hp < 100)
+            return true;
+        return false;
+    }
+
+    private bool satisfied()
+    {
+        if (stamina < 150 || hp < 100)
+            return false;
+        return true;
+    
+	}
+	public void getNewLeader(List<Predator> herd){
+		
+		Predator newLeader = GetComponent<LeaderSelectorPredator>().getLeader(herd);
+		foreach( Predator p in herd ){
+			p.setLeader(newLeader.gameObject);
+			p.leader = this.gameObject;
+			if(p.gameObject.transform.Find("leaderLigth") != null){
+				Destroy(p.gameObject.transform.Find("leaderLigth").gameObject);
+			}
+			p.isLeader=false;
+		}
+		newLeader.isLeader = true;
+		newLeader.setLeader (newLeader.gameObject);
+		GameObject brigth = new GameObject("leaderLigth");
+		brigth.AddComponent(typeof(Light));							//se le agrega la luz
+		
+		brigth.transform.parent = newLeader.gameObject.transform;							//Se fija a la entidad
+		
+		
+		brigth.light.type = LightType.Spot;								//Se elije el tipo de luz SPOT
+
+		//Se pone la mira hacia abajo
+		brigth.transform.position = brigth.transform.parent.position + new Vector3(0, 1, 0);
+		brigth.transform.rotation = Quaternion.Euler(new Vector3(90, 0, 0));
+		
+		//Color, Alcance, Dispercion
+		brigth.light.color = Color.blue;
+		brigth.light.intensity = 2;
+		brigth.light.range = 50F;
+		brigth.light.spotAngle = 180f;
+		
+	}
+
+
+>>>>>>> 6cb12452dd10837de723f2ffd895c416cd8f37b2
 }

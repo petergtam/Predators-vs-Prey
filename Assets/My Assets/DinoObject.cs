@@ -196,9 +196,43 @@ namespace Assets.My_Assets
             state = States.Die;
             GetComponent<DinasorsAnimationCorrector>().die();
             defense = 0;
-            if ((IsMyLeader(gameObject) || isLeader == true) && gameObject.transform.Find("leaderLigth") != null)
+			if (this.herd.Contains (this.gameObject)) {
+				this.herd.Remove (this.gameObject);
+			} else {
+				return;
+			}
+			foreach (GameObject go in this.herd) {
+				go.GetComponent<DinoObject>().herd.Remove (this.gameObject);
+			}
+			if (isLeader == true)
             {
-                Destroy(gameObject.transform.Find("leaderLigth").gameObject);
+				if( gameObject.transform.Find("leaderLigth") != null ){
+               		 Destroy(gameObject.transform.Find("leaderLigth").gameObject);
+				}
+				Prey p = gameObject.GetComponent<Prey>();
+				Predator pr = gameObject.GetComponent<Predator>();
+				if( p != null ){
+					List<Prey> listHerd = new List<Prey>();
+					foreach( GameObject go in p.herd){
+						listHerd.Add( go.GetComponent<Prey>());
+					}
+					if( listHerd.Count > 0){
+						p.getNewLeader(listHerd);
+					}else{
+						p.isLeader = false;
+					}
+				}
+				if(pr != null){
+					List<Predator> listHerd = new List<Predator>();
+					foreach( GameObject go in pr.herd){
+						listHerd.Add( go.GetComponent<Predator>());
+					}
+					if(listHerd.Count > 0){
+						pr.getNewLeader(listHerd);
+					}else{
+						pr.isLeader = false;
+					}
+				}
             }
         }
         #endregion
@@ -347,6 +381,7 @@ namespace Assets.My_Assets
         /// <returns>Retorna si el objeto es mi lider</returns>
         protected bool IsMyLeader(GameObject l)
         {
+			
             if (l.GetInstanceID() == leader.GetInstanceID())
                 return true;
             return false;
