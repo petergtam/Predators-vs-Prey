@@ -68,7 +68,7 @@ namespace Assets.My_Assets.scripts.my_scripts
                         score = currentScore;
                         result = current;
                     }
-                    else if (Mathf.Abs(actualPosition.sqrMagnitude - result.transform.position.sqrMagnitude) > Mathf.Abs(actualPosition.sqrMagnitude - current.transform.position.sqrMagnitude))
+                    else if (Vector3.Distance(actualPosition, result.transform.position) > Vector3.Distance(actualPosition, current.transform.position))
                     {
                         score = currentScore;
                         result = current;
@@ -92,7 +92,7 @@ namespace Assets.My_Assets.scripts.my_scripts
                 nodesData[1] = n.GetComponent<PathNode>().getPrays();
                 nodesData[2] = actualNode.GetComponent<PathNode>().getPredators() + n.GetComponent<PathNode>().getPredators();
                 nodesData[3] = Time.time;
-                nodesData[4] = Mathf.Abs(actualNode.transform.position.magnitude - n.transform.position.magnitude);
+                nodesData[4] = Vector3.Distance(actualNode.transform.position, n.transform.position);
 
                 Edges.Add(actualNode.GetComponent<PathNode>().name, n.GetComponent<PathNode>().name, nodesData);
             }

@@ -102,7 +102,7 @@ namespace Assets.My_Assets
             if (classType == typeof (Prey))
             {
                 List<Agent> lstCharm = GetHerd();
-                List<Agent> lstPredator = GetColliders<Predator>();
+                List<Agent> lstPredator = GetColliders<Predator>(2.0f);
 
                 fearIndicator = (double) lstPredator.Count/lstCharm.Count;
             }
@@ -148,7 +148,7 @@ namespace Assets.My_Assets
         /// </summary>
         /// <typeparam name="T">Tipo del objeto a buscar</typeparam>
         /// <returns>Retorna la lista de objetos que colicionan</returns>
-        public List<Agent> GetColliders<T>() where T : Agent
+        public List<Agent> GetColliders<T>(float factor) where T : Agent
         {
             List<Agent> lstColliders = new List<Agent>();
 
@@ -159,7 +159,7 @@ namespace Assets.My_Assets
                 lstColliders.Add(this);
             }
 
-            Collider[] hitColliders = Physics.OverlapSphere(transform.position, comRange);
+            Collider[] hitColliders = Physics.OverlapSphere(transform.position, comRange * factor);
             foreach (Collider e in hitColliders)
             {
                 T oAgent = e.GetComponent<T>();
@@ -182,7 +182,7 @@ namespace Assets.My_Assets
 
             if (actualFood != null)
             {
-                if (Math.Abs(actualFood.transform.position.magnitude - transform.position.magnitude) > 2*comRange)
+                if (Vector3.Distance(actualFood.transform.position, transform.position) > 2 * comRange)
                 {
                     actualFood = null;
                 }
@@ -234,7 +234,7 @@ namespace Assets.My_Assets
             var classType = GetType();
             if (classType == typeof(Prey))
             {
-                if (GetColliders<Predator>().Count > 0)
+                if (GetColliders<Predator>(1).Count > 0)
                 {
                     Gizmos.color = new Color(255, 0, 0);
                 }
@@ -245,7 +245,7 @@ namespace Assets.My_Assets
             }
             else
             {
-                if (GetColliders<Prey>().Count > 0)
+                if (GetColliders<Prey>(1).Count > 0)
                 {
                     Gizmos.color = new Color(255, 0, 0);
                 }
@@ -266,7 +266,7 @@ namespace Assets.My_Assets
             var classType = GetType();
             if (classType == typeof(Prey))
             {
-                if (GetColliders<Predator>().Count > 0)
+                if (GetColliders<Predator>(1).Count > 0)
                 {
                     Gizmos.color = new Color(255, 0, 0, .2f);
                 }
@@ -277,7 +277,7 @@ namespace Assets.My_Assets
             }
             else
             {
-                if (GetColliders<Prey>().Count > 0)
+                if (GetColliders<Prey>(1).Count > 0)
                 {
                     Gizmos.color = new Color(255, 0, 0, .2f);
                 }
@@ -287,11 +287,6 @@ namespace Assets.My_Assets
                 }
             }
             Gizmos.DrawSphere(transform.position, comRange);
-
-            if (nav != null)
-            {
-                Gizmos.DrawLine(transform.position, nav.transform.position);
-            }
         }
     }
 }

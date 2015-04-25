@@ -139,7 +139,7 @@ namespace Assets.My_Assets
 
             float factor = 1f;
             if (isNeededRun)
-                factor *= 2f;
+                factor = 2f;
 
             if (state == States.Die)
             {
@@ -247,7 +247,17 @@ namespace Assets.My_Assets
         {
             if (isRun)
             {
-                return (float)(speed * ((stamina < 50 ? 50 : stamina) / 100.0));
+                if (isNeededRun)
+                {
+                    if (GetType() == typeof(Prey))
+                    {
+                        return (float)(speed * ((stamina < 50 ? 50 : stamina) / 100.0));
+                    }
+                    else
+                    {
+                        return (float)((speed/1.5) * ((stamina < 50 ? 50 : stamina) / 100.0));
+                    }
+                }
             }
             return (float)((speed / 3.0) * ((stamina < 50 ? 50 : stamina) / 100.0));
         }

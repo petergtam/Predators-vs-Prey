@@ -89,6 +89,7 @@ public class Prey : Agent
         }
 
     }
+
     #region Hungry Stimulus
     private void behavior_hungry()
     {
@@ -98,7 +99,7 @@ public class Prey : Agent
             {
                 if (actualPredator != null)
                 {
-                    if (Math.Abs(actualPredator.transform.position.magnitude - transform.position.magnitude) > 2 * comRange)
+                    if (Vector3.Distance(actualPredator.transform.position, transform.position) > 3 * comRange)
                     {
                         actualPredator = null;
                     }
@@ -148,20 +149,6 @@ public class Prey : Agent
         }
     }
 
-    private void behavior_following()
-    {
-        nav.destination = leader.transform.position;
-    }
-
-    private void behavior_waiting()
-    {
-        //Esperar a que el lider tome una decicion
-        if (nav.velocity != Vector3.zero)
-        {
-            Stop();
-        }
-    }
-
     private void behavior_searching()
     {
         //Calcula nueva posicion de la comida
@@ -202,13 +189,10 @@ public class Prey : Agent
                     state = States.Following;
                 }
             }
-            else
-            {
-                nav.destination = actualFood.transform.position;
-            }
         }
         else
         {
+            nav.destination = actualFood.transform.position;
             if (DistanceFromDestination() <= DistanceToBite(true))
             {
                 Stop();
@@ -225,6 +209,10 @@ public class Prey : Agent
                     BiteEnemy(true);
                 }
             }
+            else
+            {
+                GetComponent<DinasorsAnimationCorrector>().idle();
+            }
         }
     }
 
@@ -238,13 +226,35 @@ public class Prey : Agent
         else
         {
             EatEnemy(true);
-
             if (actualFood.GetComponent<Plant>().flesh < 0)
             {
                 GetComponent<DinasorsAnimationCorrector>().idle();
                 state = States.Hunting;
             }
         }
+    }
+
+    private void behavior_following()
+    {
+        nav.destination = leader.transform.position;
+    }
+
+    private void behavior_waiting()
+    {
+        //Esperar a que el lider tome una decicion
+        if (nav.velocity != Vector3.zero)
+        {
+            Stop();
+        }
+    }
+
+    /// <summary>
+    /// Llama al modulo de logica difusa para encontrar el area mas conveniente para encontrr comida
+    /// </summary>
+    /// <returns>Regresa ruta de la comida</returns>
+    private Vector3 SearchForFood()
+    {
+        return GetComponent<PreySearchFood>().SearchForFood(transform.position);
     }
 
     /// <summary>
@@ -277,15 +287,6 @@ public class Prey : Agent
             }
         }
         return lstFood;
-    }
-
-    /// <summary>
-    /// Llama al modulo de logica difusa para encontrar el area mas conveniente para encontrr comida
-    /// </summary>
-    /// <returns>Regresa ruta de la comida</returns>
-    private Vector3 SearchForFood()
-    {
-        return GetComponent<PreySearchFood>().SearchForFood(transform.position);
     }
     #endregion
 
@@ -344,12 +345,20 @@ public class Prey : Agent
     {
         if (state != States.Hiding)
         {
-            Agent oPredator = GetColliders<Predator>().First();
-            var scalar = 3 * (transform.position - oPredator.transform.position);
+            Agent oPredator = GetColliders<Predator>(2.5f).First();
+            var scalar = 4 * (transform.position - oPredator.transform.position);
             nav.destination = (transform.position + scalar);
-            state = States.Hiding;
             actualPredator = oPredator.gameObject;
+
+            state = States.Hiding;
             isNeededRun = true;
+        }
+        else if (Vector3.Distance(transform.position, actualPredator.transform.position) < 50f)
+        {
+            Agent oPredator = GetColliders<Predator>(2.5f).First();
+            var scalar = 4 * (transform.position - oPredator.transform.position);
+            nav.destination = (transform.position + scalar);
+            actualPredator = oPredator.gameObject;
         }
     }
     #endregion
@@ -391,15 +400,9 @@ public class Prey : Agent
     {
         BroadCast("LeaderSaysUnsetLeader", l);
     }
-
-    private void order_panic(GameObject l)
-    {
-        BroadCast("SaysPanic", l);
-    }
     #endregion
 
     #region Reacciones a ordenes del lider
-
     private void LeaderSaysFollowMe(GameObject l)
     {
         if (state != States.Following && 0 < hp)
@@ -477,13 +480,5 @@ public class Prey : Agent
             }
         }
     }
-
-    private void SaysPanic(GameObject l)
-    {
-        if (0 < hp)
-            state = States.Hiding;
-
-    }
-
     #endregion
 }
