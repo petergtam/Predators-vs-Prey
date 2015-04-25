@@ -180,14 +180,13 @@ namespace Assets.My_Assets
         {
             bool metabolism = base.Metabolism();
 
-            /*
             if (actualFood != null)
             {
                 if (Math.Abs(actualFood.transform.position.magnitude - transform.position.magnitude) > 2*comRange)
                 {
                     actualFood = null;
                 }
-            }*/
+            }
 
             //Cambiar tamaño
             const float scale = 0.5f;

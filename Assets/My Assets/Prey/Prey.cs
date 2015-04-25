@@ -90,17 +90,21 @@ public class Prey : Agent
 
     }
     #region Hungry Stimulus
-    private int i = 0;
     private void behavior_hungry()
     {
         if (isLeader == true)
         {
             if (state == States.Hiding)
             {
-                i++;
-                if (i > 200)
+                if (actualPredator != null)
                 {
-                    i = 0;
+                    if (Math.Abs(actualPredator.transform.position.magnitude - transform.position.magnitude) > 2 * comRange)
+                    {
+                        actualPredator = null;
+                    }
+                }
+                else
+                {
                     state = States.Searching;
                 }
             }
@@ -340,19 +344,14 @@ public class Prey : Agent
     {
         if (state != States.Hiding)
         {
-            List<Agent> lstPredators = GetColliders<Predator>();
-            var scalar = 3 * (transform.position - lstPredators.First().transform.position);
+            Agent oPredator = GetColliders<Predator>().First();
+            var scalar = 3 * (transform.position - oPredator.transform.position);
             nav.destination = (transform.position + scalar);
             state = States.Hiding;
+            actualPredator = oPredator.gameObject;
             isNeededRun = true;
         }
     }
-
-    public IEnumerator xx()
-    {
-        yield return new WaitForSeconds(50f);
-    }
-
     #endregion
 
     #region Mating Stimulus
@@ -368,7 +367,6 @@ public class Prey : Agent
     #endregion
 
     #region Ordenes del lider
-
     private void order_followMe(GameObject l)
     {
         BroadCast("LeaderSaysFollowMe", l);
@@ -398,7 +396,6 @@ public class Prey : Agent
     {
         BroadCast("SaysPanic", l);
     }
-
     #endregion
 
     #region Reacciones a ordenes del lider
