@@ -3,30 +3,37 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Assets.My_Assets;
+using Assets.My_Assets.scripts;
 using Random = UnityEngine.Random;
 
 public class Prey : Agent
 {
     private TextMesh textMesh;
 
-    public static string[] names = { "Gibran", "Pedro", "Celeste", "Lea", "Ivan", "Victor", "Alberto", "Hector", "Mayra", "Orlando", "Mario", "Ruben", "Armando", "Edith", "Arturo", "Jairo"};
-    public static int indice = 0;
+    public static string[] names = { "Gibran", "Pedro", "Celeste", "Lea", 
+									 "Ivan", "Victor", "Alberto", "Hector", 
+									 "Mayra", "Orlando", "Mario", "Ruben", 
+									 "Armando", "Edith", "Arturo", "Jairo"};
+	public int herdid ;
+	public static int indice = 0;
 
-    void Start()
+    void Awake()
     {
         InitValue();
 
         state = States.ChoosingLeader;
 
         //Si no cuenta con eleccion de lider, el es el lider
-        if (GetComponent<PredatorLeaderChoosing>() == null)
+        /*if (GetComponent<LeaderSelectorPrey>() == null)
             setLeader(gameObject);
         else
         {
-            GetComponent<PredatorLeaderChoosing>().choose();
-        }
-
+            GetComponent<LeaderSelectorPrey>().;
+        }*/
+		//setLeader(gameObject);
         name = Prey.names[indice];
+		//setLeader (gameObject);
+
         indice++;
 
         textMesh = (TextMesh)gameObject.AddComponent("TextMesh");
@@ -34,14 +41,13 @@ public class Prey : Agent
         textMesh.font = f;
         textMesh.renderer.sharedMaterial = f.material;
         textMesh.text = name;
-
+		//getNewLeader();
     }
 
     private void Update()
     {
         if (!Metabolism())
             return;
-
         nav.speed = Velocidad(isNeededRun);
 
         StimulusEnum stimulus = SelectStimulu();
@@ -228,13 +234,8 @@ public class Prey : Agent
     {
         if (state != States.ChoosingLeader)
         {
-            state = States.ChoosingLeader;
-            if (GetComponent<PreyLeaderChoosing>() == null)
-                setLeader(gameObject);
-            else
-            {
-                GetComponent<PreyLeaderChoosing>().choose();
-            }
+            //state = States.ChoosingLeader;
+			//getNewLeader();
         }
     }
 
@@ -393,10 +394,17 @@ public class Prey : Agent
     /// <param name="l">Lider del objeto</param>
     public void setLeader(GameObject l)
     {
-        leader = l;
-        nav.avoidancePriority = 1;
-
-        if (IsMyLeader(gameObject))
+    	if( nav != null )
+        	nav.avoidancePriority = 1;
+		if (this.isLeader) {
+			isLeader = true;
+			leader = gameObject;
+			state = States.Searching;
+		} else {
+			leader = l;
+			state = States.Waiting;
+		}
+        /*if (IsMyLeader(gameObject))
         {
             isLeader = true;
             state = States.Searching;
@@ -405,7 +413,7 @@ public class Prey : Agent
         {
             isLeader = false;
             state = States.Waiting;
-        }
+        }*/
     }
     #endregion
 
@@ -450,5 +458,39 @@ public class Prey : Agent
     {
         return GetComponent<PreySearchFood>().searchForFood(transform.position);
     }
+
+	public void getNewLeader(List<Prey> herd){
+
+		Prey newLeader = GetComponent<LeaderSelectorPrey>().getLeader(herd);
+		foreach( Prey p in herd ){
+				p.setLeader(newLeader.gameObject);
+				p.leader = this.gameObject;
+				if(p.gameObject.transform.Find("leaderLigth") != null){
+					Destroy(p.gameObject.transform.Find("leaderLigth").gameObject);
+				}
+				p.isLeader=false;
+		}
+		newLeader.isLeader = true;
+		newLeader.setLeader (newLeader.gameObject);
+		GameObject brigth = new GameObject("leaderLigth");
+		brigth.AddComponent(typeof(Light));							//se le agrega la luz
+		
+		brigth.transform.parent = newLeader.gameObject.transform;							//Se fija a la entidad
+		
+		
+		brigth.light.type = LightType.Spot;								//Se elije el tipo de luz SPOT
+		
+		//Se pone la mira hacia abajo
+		brigth.transform.position = brigth.transform.parent.position + new Vector3(0, 1, 0);
+		brigth.transform.rotation = Quaternion.Euler(new Vector3(90, 0, 0));
+		
+		//Color, Alcance, Dispercion
+		brigth.light.color = Color.white;
+		brigth.light.intensity = 2;
+		brigth.light.range = 50F;
+		brigth.light.spotAngle = 180f;
+		
+	}
+		
     #endregion
 }

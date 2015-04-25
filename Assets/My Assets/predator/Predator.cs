@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Assets.My_Assets;
+using Assets.My_Assets.scripts;
 using Random = UnityEngine.Random;
 
 public class Predator : Agent
@@ -8,20 +11,20 @@ public class Predator : Agent
     private TextMesh textMesh;
     public static string[] names = { "Dr Mario", "Dr Andres", "Dr Mellado", "Dr Felix", "Dr Raul", "Ing. Elvia", "Dr "};
     public static int indice = 0;
-
-    void Start()
+	public int herdid;
+    void Awake()
     {
         InitValue();
         
         state = States.ChoosingLeader;
 
         //Si no cuenta con eleccion de lider, el es el lider
-        if (GetComponent<PredatorLeaderChoosing>() == null)
+        /*if (GetComponent<PredatorLeaderChoosing>() == null)
             setLeader(gameObject);
         else
         {
             GetComponent<PredatorLeaderChoosing>().choose();
-        }
+        }*/
 
         name = Predator.names[indice];
         indice++;   
@@ -413,9 +416,27 @@ public class Predator : Agent
      */
     public void setLeader(GameObject l)
     {
-        leader = l;
-        nav.avoidancePriority = 1;
-        state = States.Searching;
+		if( nav != null )
+			nav.avoidancePriority = 1;
+		if (this.isLeader) {
+			isLeader = true;
+			leader = gameObject;
+			state = States.Searching;
+		} else {
+			leader = l;
+			state = States.Waiting;
+		}
+		/*if (IsMyLeader(gameObject))
+        {
+            isLeader = true;
+            state = States.Searching;
+        }
+        else
+        {
+            isLeader = false;
+            state = States.Waiting;
+        }*/
+
     }
     
     /**
@@ -516,5 +537,40 @@ public class Predator : Agent
         if (stamina < 150 || hp < 100)
             return false;
         return true;
-    }
+    
+	}
+	public void getNewLeader(List<Predator> herd){
+		
+		Predator newLeader = GetComponent<LeaderSelectorPredator>().getLeader(herd);
+		foreach( Predator p in herd ){
+			p.setLeader(newLeader.gameObject);
+			p.leader = this.gameObject;
+			if(p.gameObject.transform.Find("leaderLigth") != null){
+				Destroy(p.gameObject.transform.Find("leaderLigth").gameObject);
+			}
+			p.isLeader=false;
+		}
+		newLeader.isLeader = true;
+		newLeader.setLeader (newLeader.gameObject);
+		GameObject brigth = new GameObject("leaderLigth");
+		brigth.AddComponent(typeof(Light));							//se le agrega la luz
+		
+		brigth.transform.parent = newLeader.gameObject.transform;							//Se fija a la entidad
+		
+		
+		brigth.light.type = LightType.Spot;								//Se elije el tipo de luz SPOT
+
+		//Se pone la mira hacia abajo
+		brigth.transform.position = brigth.transform.parent.position + new Vector3(0, 1, 0);
+		brigth.transform.rotation = Quaternion.Euler(new Vector3(90, 0, 0));
+		
+		//Color, Alcance, Dispercion
+		brigth.light.color = Color.blue;
+		brigth.light.intensity = 2;
+		brigth.light.range = 50F;
+		brigth.light.spotAngle = 180f;
+		
+	}
+
+
 }
