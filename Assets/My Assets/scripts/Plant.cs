@@ -43,7 +43,7 @@ public class Plant : MonoBehaviour {
 	IEnumerator treeGrow(){
 		while (true) {
 			//Cambia el tamaño del arbol, de acuerdo a la cantidad de alimento que tiene
-			float size = flesh / maxFruit;
+			float size = (flesh / maxFruit)*3;
 			gameObject.transform.localScale = new Vector3 (size, size, size);
 			yield return new WaitForSeconds( 3 );
 		}
