@@ -118,7 +118,7 @@ public class DinasorsAnimationCorrector : MonoBehaviour {
 	}
 
 	public void attack(){
-		NavMeshAgent nav = GetComponent<NavMeshAgent>();
+		//NavMeshAgent nav = GetComponent<NavMeshAgent>();
 		state = (int)States.attack;
 		/*nav.Stop (true);
 		nav.destination = transform.position;
