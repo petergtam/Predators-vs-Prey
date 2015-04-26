@@ -25,27 +25,55 @@ namespace Assets.My_Assets
 
         public StimulusEnum SelectStimulu(NeuralNetwork nn)
         {
-            if (name == "Pedro")
+            if (this.identifier == "Pedro")
             {
-                /*
-                nn.training(GetStimulus());
-                foreach (var weight in nn.weights)
-                {
-                    Console.WriteLine(weight);
-                }*/
-            }
-            //return StimulusEnum.Hungry;
-            double[] lstEstimulus = GetStimulus();
-            if (lstEstimulus[0] > 0)
-            {
-                return StimulusEnum.Fear;
-            }
-            else
-            {
-                return StimulusEnum.Hungry;
-            }
+                var a = GetStimulus();
+                double[] result = null;
 
-            //TODO: Implementar red bayesiana
+                if (nn.IsNeedTraining()) result = nn.Training(a);
+                else Debug.Log("Terminado el training");
+
+                var sb = new StringBuilder();
+                var sb2 = new StringBuilder();
+                sb.Append("(");
+                foreach (double t in a)
+                {
+                    sb.Append(t + ",");
+                }
+                sb.Append(")\n");
+                sb2.Append("(");
+                if (result != null)
+                {
+                    for (int i = 0; i < a.Length; i++)
+                    {
+                        sb2.Append(result[i] + ",");
+                    }
+                }
+                sb2.Append(")\n");
+                Debug.Log("Stimulus:" + sb);
+                Debug.Log("Output" + sb2);
+                if (result != null)
+                {
+                    if (result[0] > 1)
+                    {
+                        return StimulusEnum.Fear;
+                    }
+                    else if (result[1] > 1)
+                    {
+                        return StimulusEnum.LeaderShip;
+                    }
+                    else if (result[2] > 1)
+                    {
+                        return StimulusEnum.Hungry;
+                    }
+                    else if (result[3] > 1)
+                    {
+                        return StimulusEnum.Mating;
+                    }
+                    else return StimulusEnum.Rest;
+                }
+            }
+            return StimulusEnum.Rest;
         }
 
         /// <summary>

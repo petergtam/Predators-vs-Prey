@@ -26,14 +26,14 @@ public class Predator : Agent
             GetComponent<PredatorLeaderChoosing>().choose();
         }*/
 
-        name = Predator.names[indice];
+        identifier = Predator.names[indice];
         indice++;
 
         textMesh = (TextMesh) gameObject.AddComponent("TextMesh");
         var f = (Font) Resources.LoadAssetAtPath("Assets/My Assets/Fonts/coolvetica.ttf", typeof (Font));
         textMesh.font = f;
         textMesh.renderer.sharedMaterial = f.material;
-        textMesh.text = name;
+        textMesh.text = identifier;
     }
 
     private void Update()
