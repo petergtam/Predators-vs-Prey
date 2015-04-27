@@ -9,7 +9,8 @@ public class Predator : Agent
     private TextMesh textMesh;
     public static string[] names = {"Dr Mario", "Dr Andres", "Dr Mellado", "Dr Felix", "Dr Raul", "Ing. Elvia", "Dr "};
     public static int indice = 0;
-    private NeuralNetwork nn;
+
+	private NeuralNetwork nn;
 
 	public int herdid;
     void Awake()
@@ -34,6 +35,9 @@ public class Predator : Agent
         textMesh.font = f;
         textMesh.renderer.sharedMaterial = f.material;
         textMesh.text = identifier;
+
+		nn = new NeuralNetwork (this);
+
     }
 
     private void Update()

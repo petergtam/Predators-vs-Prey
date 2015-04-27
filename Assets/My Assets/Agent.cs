@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using System.Text;
 
 namespace Assets.My_Assets
 {
@@ -13,7 +14,8 @@ namespace Assets.My_Assets
             LeaderShip,
             Fear,
             Hungry,
-            Mating
+            Mating,
+			Rest
         }
 
         /// <summary>
@@ -30,9 +32,13 @@ namespace Assets.My_Assets
                 var a = GetStimulus();
                 double[] result = null;
 
-                if (nn.IsNeedTraining()) result = nn.Training(a);
+				if (nn.IsNeedTraining()){ 
+					result = nn.Training(a);
+					return StimulusEnum.Rest;
+				}
                 else Debug.Log("Terminado el training");
 
+				result = nn.Ejecution(a);
                 var sb = new StringBuilder();
                 var sb2 = new StringBuilder();
                 sb.Append("(");
@@ -44,7 +50,7 @@ namespace Assets.My_Assets
                 sb2.Append("(");
                 if (result != null)
                 {
-                    for (int i = 0; i < a.Length; i++)
+                    for (int i = 0; i < a.Length-1; i++)
                     {
                         sb2.Append(result[i] + ",");
                     }
@@ -54,23 +60,39 @@ namespace Assets.My_Assets
                 Debug.Log("Output" + sb2);
                 if (result != null)
                 {
-                    if (result[0] > 1)
-                    {
-                        return StimulusEnum.Fear;
-                    }
-                    else if (result[1] > 1)
-                    {
-                        return StimulusEnum.LeaderShip;
-                    }
-                    else if (result[2] > 1)
-                    {
-                        return StimulusEnum.Hungry;
-                    }
-                    else if (result[3] > 1)
-                    {
-                        return StimulusEnum.Mating;
-                    }
-                    else return StimulusEnum.Rest;
+					if(this is Prey){
+	                    if (result[0] >= 1)
+	                    {
+	                        return StimulusEnum.Fear;
+	                    }
+	                    else if (result[1] >= 1)
+	                    {
+	                        return StimulusEnum.LeaderShip;
+	                    }
+	                    else if (result[2] >= 1)
+	                    {
+	                        return StimulusEnum.Hungry;
+	                    }
+	                    else if (result[3] >= 1)
+	                    {
+	                        return StimulusEnum.Mating;
+	                    }
+	                    else return StimulusEnum.Rest;
+					}else{
+						if (result[0] >= 1)
+						{
+							return StimulusEnum.LeaderShip;
+						}
+						else if (result[1] >= 1)
+						{
+							return StimulusEnum.Hungry;
+						}
+						else if (result[2] >= 1)
+						{
+							return StimulusEnum.Mating;
+						}
+						else return StimulusEnum.Rest;
+					}
                 }
             }
             return StimulusEnum.Rest;
@@ -82,12 +104,20 @@ namespace Assets.My_Assets
         /// <returns>Retorna un arreglo con los estimulos del agente. Miedo, Liderazgo, Hambre y Apareamiento.</returns>
         protected double[] GetStimulus()
         {
-            double[] lstStimulus = new double[4];
+            double[] lstStimulus = new double[5];
 
-            lstStimulus[0] = GetFearStimulus();
-            lstStimulus[1] = GetLeaderShipStimulus();
-            lstStimulus[2] = isLeader ? GetHungryStimulus() : 0;
-            lstStimulus[3] = isLeader ? GetMatingStimulus() : 0;
+			if (this is Prey) {
+				lstStimulus [0] = 1;
+				lstStimulus [1] = GetFearStimulus ();
+				lstStimulus [2] = GetLeaderShipStimulus ();
+				lstStimulus [3] = isLeader ? GetHungryStimulus () : 0;
+				lstStimulus [4] = isLeader ? GetMatingStimulus () : 0;
+			} else {
+				lstStimulus [0] = 1;
+				lstStimulus [1] = GetLeaderShipStimulus ();
+				lstStimulus [2] = isLeader ? GetHungryStimulus () : 0;
+				lstStimulus [3] = isLeader ? GetMatingStimulus () : 0;
+			}
 
             return lstStimulus;
         }
@@ -149,8 +179,8 @@ namespace Assets.My_Assets
 
             //Se obtiene el promedio de stanmina
             var hungryIndicator = lstCharm.Average(x => x.stamina);
-            if (hungryIndicator < 100)//satisfecho!
-                return (100 - hungryIndicator)/100;
+            if (hungryIndicator < 80)//satisfecho!
+				return 1;//(100 - hungryIndicator)/100;
             return 0;
         }
 
@@ -165,7 +195,7 @@ namespace Assets.My_Assets
 
             //Se obtiene la razon de los agentes que estan en edad de procrear entre el total de la manada
             double matingIndicator = (double) lstCharm.Count(x => x.LifeState == LifeEnum.Adulto)/lstCharm.Count;
-
+			Debug.Log (matingIndicator);
             return matingIndicator;
         }
 
