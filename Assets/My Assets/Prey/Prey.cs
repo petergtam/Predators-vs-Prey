@@ -38,7 +38,7 @@ public class Prey : Agent
             GetComponent<LeaderSelectorPrey>().;
         }*/
 		//setLeader(gameObject);
-        name = Prey.names[indice];
+        identifier = Prey.names[indice];
 		//setLeader (gameObject);
 
         indice++;
@@ -47,9 +47,9 @@ public class Prey : Agent
         var f = (Font) Resources.LoadAssetAtPath("Assets/My Assets/Fonts/coolvetica.ttf", typeof (Font));
         textMesh.font = f;
         textMesh.renderer.sharedMaterial = f.material;
-        textMesh.text = name;
+        textMesh.text = identifier;
 		//getNewLeader();
-        if (name == "Pedro")
+        if (identifier == "Pedro")
         {
             nn = new NeuralNetwork();
         }
@@ -117,7 +117,7 @@ public class Prey : Agent
             }
             else if (state == States.Searching)
             {
-                Debug.Log(name + ": Search");
+                Debug.Log(identifier + ": Search");
                 isNeededRun = false;
                 behavior_searching();
             }
