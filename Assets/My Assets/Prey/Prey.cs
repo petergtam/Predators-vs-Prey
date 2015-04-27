@@ -70,15 +70,16 @@ public class Prey : Agent
                 break;
 
             case StimulusEnum.Fear:
-                if (isLeader == true)
+                behavior_fear();
+                /*if (isLeader == true)
                 {
                     behavior_fear();
                 }
                 else
                 {
                     //Comunicar al lider
-                    BroadCast("Peligro manada", null);
-                }
+                    BroadCast("behavior_fear", null);
+                }*/
                 break;
 
             case StimulusEnum.Hungry:
@@ -356,6 +357,17 @@ public class Prey : Agent
             var scalar = 4 * (transform.position - oPredator.transform.position);
             nav.destination = (transform.position + scalar);
             actualPredator = oPredator.gameObject;
+
+            /*
+            List<Agent> lstPredators = GetColliders<Predator>(2.5f);
+            var result = Vector3.zero;
+            foreach (var oPredator in lstPredators)
+            {
+                result = transform.position - oPredator.transform.position;
+                actualPredator = oPredator.gameObject;
+            }
+            nav.destination = transform.position + result;
+             */
 
             state = States.Hiding;
             isNeededRun = true;
