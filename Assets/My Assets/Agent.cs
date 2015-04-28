@@ -195,8 +195,10 @@ namespace Assets.My_Assets
 
             //Se obtiene la razon de los agentes que estan en edad de procrear entre el total de la manada
             double matingIndicator = (double) lstCharm.Count(x => x.LifeState == LifeEnum.Adulto)/lstCharm.Count;
-			Debug.Log (matingIndicator);
-            return matingIndicator;
+			//Debug.Log (matingIndicator);
+			if (matingIndicator > .5)
+				return 1;
+            return 0;
         }
 
         #endregion

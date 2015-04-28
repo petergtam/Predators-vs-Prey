@@ -51,7 +51,7 @@ public class Prey : Agent
 		//getNewLeader();
         if (identifier == "Pedro")
         {
-            nn = new NeuralNetwork();
+            nn = new NeuralNetwork(this);
         }
 
     }
@@ -299,11 +299,7 @@ public class Prey : Agent
     #region Leader Stimulus
     private void behavior_select_leader()
     {
-        if (state != States.ChoosingLeader)
-        {
-            //state = States.ChoosingLeader;
-			//getNewLeader();
-        }
+		//Ke hacer aqui
     }
 
 	/// <summary>
