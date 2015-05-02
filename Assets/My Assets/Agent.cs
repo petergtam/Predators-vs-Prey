@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using UnityEditor;
-using UnityEngine;
 using System.Text;
+using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace Assets.My_Assets
 {
@@ -15,8 +16,7 @@ namespace Assets.My_Assets
             LeaderShip,
             Fear,
             Hungry,
-            Mating,
-			Rest
+            Mating,            
         }
 
         /// <summary>
@@ -28,82 +28,78 @@ namespace Assets.My_Assets
 
         public StimulusEnum SelectStimulu(NeuralNetwork nn)
         {
-            double[] lstEstimulus = GetStimulus();
-            if (this is Prey && lstEstimulus[1] > 0)
+            //if (this.identifier != "Pedro") return StimulusEnum.Rest;
+            var a = GetStimulus();
+            double[] result = null;
+            var source = StreamWriter.Null;
+            if (this is Prey)
+                source = File.AppendText("test1.txt");
+            else
+                source = File.AppendText("test2.txt");
+            foreach (var s in a)
+            {
+                source.Write(s+",");
+            }
+            source.WriteLine();
+            source.Close();
+            //result = nn.IsNeedTraining() ? nn.Training(a) : nn.Ejecution(a);
+            /*var sb2 = new StringBuilder();
+            sb2.Append("(");
+            if (result != null)
+            {
+                var count = this is Prey?0:1;
+                foreach (var d in result)
+                {
+                    sb2.Append(d + " ");
+                    if (Math.Abs(1-d)<0.04)
+                    {
+                        sb2.Append(Enum.GetName(typeof(StimulusEnum), count));
+                    }
+                    sb2.Append(",");
+                    count++;
+                }
+            }
+            sb2.Append(")\n");
+            Debug.Log("Output (" + identifier + "):" + sb2);*/
+            /*var sb = new StringBuilder();
+            sb.Append("(");
+            foreach (var d in a)
+            {
+                sb.Append(d + ",");
+            }
+            sb.Append(")");
+            Debug.Log("Output (" + identifier + "):" + sb);*/
+            if (this is Prey && a[1] > 0)
             {
                 return StimulusEnum.Fear;
             }
             return StimulusEnum.Hungry;
-
-            if (this.identifier == "Pedro")
+            if (result == null) return StimulusEnum.Hungry;
+            if(this is Prey)
             {
-                var a = GetStimulus();
-                double[] result = null;
-
-				if (nn.IsNeedTraining()){ 
-					result = nn.Training(a);
-					return StimulusEnum.Rest;
-				}
-                else Debug.Log("Terminado el training");
-
-				result = nn.Ejecution(a);
-                var sb = new StringBuilder();
-                var sb2 = new StringBuilder();
-                sb.Append("(");
-                foreach (double t in a)
+                if (Math.Abs(1 - result[0]) < 0.05)
                 {
-                    sb.Append(t + ",");
+                    return StimulusEnum.Fear;
                 }
-                sb.Append(")\n");
-                sb2.Append("(");
-                if (result != null)
+                if (Math.Abs(1 - result[1]) < 0.05)
                 {
-                    for (int i = 0; i < a.Length-1; i++)
-                    {
-                        sb2.Append(result[i] + ",");
-                    }
+                    return StimulusEnum.LeaderShip;
                 }
-                sb2.Append(")\n");
-                Debug.Log("Stimulus:" + sb);
-                Debug.Log("Output" + sb2);
-                if (result != null)
+                if (Math.Abs(1 - result[2]) < 0.05)
                 {
-					if(this is Prey){
-	                    if (result[0] >= 1)
-	                    {
-	                        return StimulusEnum.Fear;
-	                    }
-	                    else if (result[1] >= 1)
-	                    {
-	                        return StimulusEnum.LeaderShip;
-	                    }
-	                    else if (result[2] >= 1)
-	                    {
-	                        return StimulusEnum.Hungry;
-	                    }
-	                    else if (result[3] >= 1)
-	                    {
-	                        return StimulusEnum.Mating;
-	                    }
-	                    else return StimulusEnum.Rest;
-					}else{
-						if (result[0] >= 1)
-						{
-							return StimulusEnum.LeaderShip;
-						}
-						else if (result[1] >= 1)
-						{
-							return StimulusEnum.Hungry;
-						}
-						else if (result[2] >= 1)
-						{
-							return StimulusEnum.Mating;
-						}
-						else return StimulusEnum.Rest;
-					}
+                    return StimulusEnum.Hungry;
                 }
+                return Math.Abs(1 - result[0]) < 0.04 ? StimulusEnum.Mating : StimulusEnum.Hungry;
             }
-            return StimulusEnum.Rest;
+            if (Math.Abs(1 - result[0]) < 0.05)
+            {
+                return StimulusEnum.LeaderShip;
+            }
+            if (Math.Abs(1 - result[1]) < 0.05)
+            {
+                return StimulusEnum.Hungry;
+            }
+            return Math.Abs(1 - result[2]) < 0.05 ? StimulusEnum.Mating : StimulusEnum.Hungry;
         }
 
         /// <summary>
@@ -137,22 +133,13 @@ namespace Assets.My_Assets
         private double GetLeaderShipStimulus()
         {
             //Se obtiene la manada
-            List<Agent> lstCharm = GetHerd();
+            List<Agent> lstCharm = GetHerd<Agent>();
 
             //Cuenta los lideres en la manada
-            int leaderCount = lstCharm.Count(x => x.isLeader && x.state != States.Die);
+            var leaderCount = lstCharm.Count(x => x.isLeader && x.state != States.Die);
                 ///TODO:Poner rango de vision de la manada
-
-            double leaderShipIndicator;
-            if (leaderCount != 1)
-            {
-                leaderShipIndicator = 1;
-            }
-            else
-            {
-                leaderShipIndicator = 0;
-            }
-            return leaderShipIndicator;
+            //Debug.Log(leaderCount+" "+identifier);                
+            return leaderCount == 0 ? 1 : 0; 
         }
 
         /// <summary>
@@ -167,10 +154,9 @@ namespace Assets.My_Assets
             //Solo las presas tienen miedo.
             if (classType == typeof (Prey))
             {
-                List<Agent> lstCharm = GetHerd();
                 List<Agent> lstPredator = GetColliders<Predator>(2.0f);
-
-                fearIndicator = (double) lstPredator.Count/lstCharm.Count;
+                if (lstPredator.Count > 0)
+                    fearIndicator = 1;
             }
 
             return fearIndicator;
@@ -183,13 +169,12 @@ namespace Assets.My_Assets
         private double GetHungryStimulus()
         {
             //Se obtiene la manada
-            List<Agent> lstCharm = GetHerd();
+            List<Agent> lstCharm = GetHerd<Agent>();
 
             //Se obtiene el promedio de stanmina
             var hungryIndicator = lstCharm.Average(x => x.stamina);
-            if (hungryIndicator < 80)//satisfecho!
-				return 1;//(100 - hungryIndicator)/100;
-            return 0;
+
+            return (100 - hungryIndicator) / 100;
         }
 
         /// <summary>
@@ -199,11 +184,10 @@ namespace Assets.My_Assets
         private double GetMatingStimulus()
         {
             //Se obtiene la manada
-            List<Agent> lstCharm = GetHerd();
+            List<Agent> lstCharm = GetHerd<Agent>();
 
             //Se obtiene la razon de los agentes que estan en edad de procrear entre el total de la manada
             double matingIndicator = (double) lstCharm.Count(x => x.LifeState == LifeEnum.Adulto)/lstCharm.Count;
-			//Debug.Log (matingIndicator);
 			if (matingIndicator > .5)
 				return 1;
             return 0;
@@ -248,15 +232,13 @@ namespace Assets.My_Assets
         {
             bool metabolism = base.Metabolism();
 
-            /*
             if (actualFood != null)
             {
-                if (Vector3.Distance(actualFood.transform.position, transform.position) > 2.5 * comRange)
+                if (Vector3.Distance(actualFood.transform.position, transform.position) > 2 * comRange)
                 {
                     actualFood = null;
                 }
             }
-             * */
 
             //Cambiar tamaño
             const float scale = 0.5f;
@@ -340,17 +322,17 @@ namespace Assets.My_Assets
         /// Obtiene la manada
         /// </summary>
         /// <returns>Retorna la lista de integrantes de la manada</returns>
-        public List<Agent> GetHerd()
+        protected List<T> GetHerd<T>() where T : Agent
         {
-            List<Agent> lstHerd = new List<Agent>();
-            if (!lstHerd.Contains(this))
+            var lstHerd = new List<T>();
+            if (!lstHerd.Contains((T) this))
             {
-                lstHerd.Add(this);
+                lstHerd.Add((T) this);
             }
 
             foreach (var e in herd)
             {
-                Agent oAgent = e.GetComponent<Agent>();
+                var oAgent = e.GetComponent<T>();
                 if (oAgent != null)
                 {
                     lstHerd.Add(oAgent);
