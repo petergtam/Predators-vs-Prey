@@ -19,14 +19,6 @@ public class Predator : Agent
 
         state = States.ChoosingLeader;
 
-        //Si no cuenta con eleccion de lider, el es el lider
-        /*if (GetComponent<PredatorLeaderChoosing>() == null)
-            setLeader(gameObject);
-        else
-        {
-            GetComponent<PredatorLeaderChoosing>().choose();
-        }*/
-
         identifier = Predator.names[indice];
         indice++;
 

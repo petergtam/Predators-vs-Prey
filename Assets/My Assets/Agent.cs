@@ -9,6 +9,7 @@ namespace Assets.My_Assets
 {
     public class Agent : DinoObject
     {
+        public string identifier;
         public enum StimulusEnum
         {
             LeaderShip,
@@ -27,6 +28,13 @@ namespace Assets.My_Assets
 
         public StimulusEnum SelectStimulu(NeuralNetwork nn)
         {
+            double[] lstEstimulus = GetStimulus();
+            if (this is Prey && lstEstimulus[1] > 0)
+            {
+                return StimulusEnum.Fear;
+            }
+            return StimulusEnum.Hungry;
+
             if (this.identifier == "Pedro")
             {
                 var a = GetStimulus();
@@ -240,13 +248,15 @@ namespace Assets.My_Assets
         {
             bool metabolism = base.Metabolism();
 
+            /*
             if (actualFood != null)
             {
-                if (Vector3.Distance(actualFood.transform.position, transform.position) > 2 * comRange)
+                if (Vector3.Distance(actualFood.transform.position, transform.position) > 2.5 * comRange)
                 {
                     actualFood = null;
                 }
             }
+             * */
 
             //Cambiar tamaño
             const float scale = 0.5f;
@@ -264,6 +274,66 @@ namespace Assets.My_Assets
                 gameObject.transform.localScale = new Vector3(newScale, newScale, newScale);
             }
             return metabolism;
+        }
+
+        /// <summary>
+        /// Muere el agente
+        /// </summary>
+        protected override void Die()
+        {
+            state = States.Die;
+            GetComponent<DinasorsAnimationCorrector>().die();
+            defense = 0;
+            if (gameObject.transform.Find("leaderLigth") != null)
+            {
+                Destroy(gameObject.transform.Find("leaderLigth").gameObject);
+            }
+
+            if (herd.Contains(gameObject))
+            {
+                herd.Remove(gameObject);
+            }
+            foreach (GameObject go in herd)
+            {
+                go.GetComponent<DinoObject>().herd.Remove(gameObject);
+            }
+            if (isLeader == true)
+            {
+                Prey p = gameObject.GetComponent<Prey>();
+                Predator pr = gameObject.GetComponent<Predator>();
+                if (p != null)
+                {
+                    List<Prey> listHerd = new List<Prey>();
+                    foreach (GameObject go in p.herd)
+                    {
+                        listHerd.Add(go.GetComponent<Prey>());
+                    }
+                    if (listHerd.Count > 0)
+                    {
+                        p.getNewLeader(listHerd);
+                    }
+                    else
+                    {
+                        p.isLeader = false;
+                    }
+                }
+                if (pr != null)
+                {
+                    List<Predator> listHerd = new List<Predator>();
+                    foreach (GameObject go in pr.herd)
+                    {
+                        listHerd.Add(go.GetComponent<Predator>());
+                    }
+                    if (listHerd.Count > 0)
+                    {
+                        pr.getNewLeader(listHerd);
+                    }
+                    else
+                    {
+                        pr.isLeader = false;
+                    }
+                }
+            }
         }
 
         /// <summary>

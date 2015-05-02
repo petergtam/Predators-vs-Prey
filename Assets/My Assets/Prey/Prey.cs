@@ -99,26 +99,27 @@ public class Prey : Agent
     #region Hungry Stimulus
     private void behavior_hungry()
     {
-        if (isLeader == true)
+        if (state == States.Hiding)
         {
-            if (state == States.Hiding)
+            if (actualPredator != null)
             {
-                if (actualPredator != null)
+                if (Vector3.Distance(actualPredator.transform.position, transform.position) > 3 * comRange)
                 {
-                    if (Vector3.Distance(actualPredator.transform.position, transform.position) > 3 * comRange)
-                    {
-                        actualPredator = null;
-                    }
-                }
-                else
-                {
-                    state = States.Searching;
+                    actualPredator = null;
                 }
             }
-            else if (state == States.Searching)
+            else
+            {
+                isNeededRun = false;
+                state = isLeader ? States.Searching: States.Following;
+            }
+        }
+
+        if (isLeader == true)
+        {
+            if (state == States.Searching)
             {
                 Debug.Log(identifier + ": Search");
-                isNeededRun = false;
                 behavior_searching();
             }
             else if (state == States.Moving)
@@ -186,14 +187,7 @@ public class Prey : Agent
             actualFood = GetBestFood();
             if (actualFood == null)
             {
-                if (isLeader == true)
-                {
-                    state = States.Searching;
-                }
-                else
-                {
-                    state = States.Following;
-                }
+                state = isLeader ? States.Searching : States.Following;
             }
         }
         else
@@ -227,7 +221,7 @@ public class Prey : Agent
         if (actualFood == null)
         {
             GetComponent<DinasorsAnimationCorrector>().idle();
-            state = States.Searching;
+            state = state = States.Hunting;
         }
         else
         {
@@ -243,6 +237,10 @@ public class Prey : Agent
     private void behavior_following()
     {
         nav.destination = leader.transform.position;
+        if (Vector3.Distance(transform.position, nav.destination) < 5f)
+        {
+            nav.speed = nav.speed *.5f;
+        }
     }
 
     private void behavior_waiting()
@@ -396,11 +394,6 @@ public class Prey : Agent
         BroadCast("LeaderSaysFollowMe", l);
     }
 
-    private void order_stop(GameObject l)
-    {
-        BroadCast("LeaderSaysStop", l);
-    }
-
     private void order_reagrupate(GameObject l)
     {
         BroadCast("LeaderSaysReagrupate", l);
@@ -409,11 +402,6 @@ public class Prey : Agent
     private void order_hunt(GameObject l)
     {
         BroadCast("LeaderSaysHunt", l);
-    }
-
-    private void order_unsetLeader(GameObject l)
-    {
-        BroadCast("LeaderSaysUnsetLeader", l);
     }
     #endregion
 
@@ -428,21 +416,6 @@ public class Prey : Agent
                 {
                     state = States.Following;
                     order_followMe(l); //Reply the message to others
-                }
-            }
-        }
-    }
-
-    private void LeaderSaysStop(GameObject l)
-    {
-        if (state != States.Waiting && 0 < hp)
-        {
-            if (IsMyLeader(l))
-            {
-                if (!IsMe(leader))
-                {
-                    state = States.Waiting;
-                    order_stop(l); //Reply the message to others
                 }
             }
         }
@@ -473,38 +446,15 @@ public class Prey : Agent
                 if (!IsMe(leader))
                 {
                     state = States.Hunting;
-                    nav.destination = l.GetComponent<NavMeshAgent>().destination;
+                    //nav.destination = l.GetComponent<NavMeshAgent>().destination;
                     order_hunt(l); //Reply the message to others
                 }
             }
         }
     }
-
-    private void LeaderSaysUnsetLeader(GameObject l)
-    {
-        if (leader != null && 0 < hp)
-        {
-            if (IsMyLeader(l))
-            {
-                if (!IsMe(leader))
-                {
-                    state = States.Hiding;
-                    leader = null;
-                    order_unsetLeader(l); //Reply the message to others
-                }
-            }
-        }
-    }
-
-    private void SaysPanic(GameObject l)
-    {
-        if (0 < hp)
-            state = States.Hiding;
-    }
     #endregion
 
     #region Liderazgo
-
 	public void getNewLeader(List<Prey> herd){
 
 		Prey newLeader = GetComponent<LeaderSelectorPrey>().getLeader(herd);

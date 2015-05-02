@@ -1,15 +1,13 @@
 ﻿using UnityEngine;
 using Random = UnityEngine.Random;
-using System.Collections;
 using System.Collections.Generic;
 
 namespace Assets.My_Assets
 {
-    public class DinoObject : MonoBehaviour
+    public abstract class DinoObject : MonoBehaviour
     {
         #region Propiedades
 
-        public string identifier;
         /// <summary>
         /// Salud de la entidad
         /// </summary>
@@ -164,6 +162,15 @@ namespace Assets.My_Assets
                 Die();
                 return false;
             }
+
+            if (actualFood != null)
+            {
+                if (Vector3.Distance(actualFood.transform.position, transform.position) > 2.5 * comRange)
+                {
+                    actualFood = null;
+                }
+            }
+
             return true;
         }
 
@@ -191,50 +198,7 @@ namespace Assets.My_Assets
         /// <summary>
         /// Muere el agente
         /// </summary>
-        protected void Die()
-        {
-            state = States.Die;
-            GetComponent<DinasorsAnimationCorrector>().die();
-            defense = 0;
-			if (this.herd.Contains (this.gameObject)) {
-				this.herd.Remove (this.gameObject);
-			} else {
-				return;
-			}
-			foreach (GameObject go in this.herd) {
-				go.GetComponent<DinoObject>().herd.Remove (this.gameObject);
-			}
-			if (isLeader == true)
-            {
-				if( gameObject.transform.Find("leaderLigth") != null ){
-               		 Destroy(gameObject.transform.Find("leaderLigth").gameObject);
-				}
-				Prey p = gameObject.GetComponent<Prey>();
-				Predator pr = gameObject.GetComponent<Predator>();
-				if( p != null ){
-					List<Prey> listHerd = new List<Prey>();
-					foreach( GameObject go in p.herd){
-						listHerd.Add( go.GetComponent<Prey>());
-					}
-					if( listHerd.Count > 0){
-						p.getNewLeader(listHerd);
-					}else{
-						p.isLeader = false;
-					}
-				}
-				if(pr != null){
-					List<Predator> listHerd = new List<Predator>();
-					foreach( GameObject go in pr.herd){
-						listHerd.Add( go.GetComponent<Predator>());
-					}
-					if(listHerd.Count > 0){
-						pr.getNewLeader(listHerd);
-					}else{
-						pr.isLeader = false;
-					}
-				}
-            }
-        }
+        protected abstract void Die();
         #endregion
 
         #region Funciones de movimiento
