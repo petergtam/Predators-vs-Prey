@@ -221,7 +221,7 @@ public class Prey : Agent
         if (actualFood == null)
         {
             GetComponent<DinasorsAnimationCorrector>().idle();
-            state = state = States.Hunting;
+            state = States.Hunting;
         }
         else
         {

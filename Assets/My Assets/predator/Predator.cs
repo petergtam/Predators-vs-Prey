@@ -74,7 +74,7 @@ public class Predator : Agent
             }
             else if (state == States.Hunting)
             {
-                behavior_leader_Hunting();
+                behavior_hunting();
             }
             else if (state == States.Eating)
             {
@@ -99,7 +99,7 @@ public class Predator : Agent
             }
             else if (state == States.Hunting)
             {
-                behavior_follower_Hunting();
+                behavior_hunting();
             }
             else if (state == States.Eating)
             {
@@ -136,21 +136,14 @@ public class Predator : Agent
         }
     }
 
-    private void behavior_leader_Hunting()
+    private void behavior_hunting()
     {
         if (actualFood == null)
         {
             actualFood = GetBestFood();
             if (actualFood == null)
             {
-                if (isLeader == true)
-                {
-                    state = States.Searching;
-                }
-                else
-                {
-                    state = States.Following;
-                }
+                state = isLeader ? States.Searching : States.Following;
             }
         }
         else
@@ -159,7 +152,6 @@ public class Predator : Agent
             nav.destination = actualFood.transform.position;
             if (DistanceFromDestination() <= DistanceToBite(false))
             {
-                //todo: Stop();
                 //Volteo a ver a la presa
                 GetComponent<DinasorsAnimationCorrector>().eating();
                 if (actualFood.GetComponent<Prey>().hp < 0)
@@ -180,18 +172,19 @@ public class Predator : Agent
 
     private void behavior_eating()
     {
+        isNeededRun = false;
         if (actualFood == null)
         {
-            this.GetComponent<DinasorsAnimationCorrector>().idle();
-            state = States.Searching;
+            GetComponent<DinasorsAnimationCorrector>().idle();
+            state = States.Hunting;
         }
         else
         {
             EatEnemy(false);
             if (actualFood.GetComponent<Prey>().flesh < 0)
             {
-                this.GetComponent<DinasorsAnimationCorrector>().idle();
-                state = States.Searching;
+                GetComponent<DinasorsAnimationCorrector>().idle();
+                state = States.Hunting;
             }
         }
     }
@@ -199,6 +192,11 @@ public class Predator : Agent
     private void behavior_follower_following()
     {
         nav.destination = leader.transform.position;
+        if (IsThereFood(2.5f))
+        {
+            state = States.Hunting;
+            order_hunt(gameObject);
+        }
     }
 
     private void behavior_follower_waiting()
@@ -220,48 +218,7 @@ public class Predator : Agent
             nav.destination = actualFood.transform.position;*/
         }
     }
-
-    private void behavior_follower_Hunting()
-    {
-        if (actualFood == null)
-        {
-            actualFood = GetBestFood();
-            if (actualFood == null)
-            {
-                if (isLeader == true)
-                {
-                    state = States.Searching;
-                }
-                else
-                {
-                    state = States.Following;
-                }
-            }
-            else
-            {
-                nav.destination = actualFood.transform.position;
-            }
-        }
-        else
-        {
-            if (DistanceFromDestination() <= DistanceToBite(false))
-            {
-                //todo: Stop();
-                //Volteo a ver a la presa
-                //TODO: nav.destination = transform.position;
-                GetComponent<DinasorsAnimationCorrector>().eating();
-                if (actualFood.GetComponent<Prey>().hp < 0)
-                {
-                    state = States.Eating;
-                }
-                else
-                {
-                    BiteEnemy(false);
-                }
-            }
-        }
-    }
-
+    
     /// <summary>
     /// Llama al modulo de logica difusa para encontrar el area mas conveniente para encontrr comida
     /// </summary>
