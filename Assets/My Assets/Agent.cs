@@ -26,22 +26,55 @@ namespace Assets.My_Assets
 
         #region Estimulos
 
+        private static List<double[]> lstEstimulusPrey = new List<double[]>();
+        private static List<double[]> lstEstimulusPredator = new List<double[]>(); 
         public StimulusEnum SelectStimulu(NeuralNetwork nn)
         {
             //if (this.identifier != "Pedro") return StimulusEnum.Rest;
             var a = GetStimulus();
             double[] result = null;
-            var source = StreamWriter.Null;
+            
+            
+
+
+            //TODO: Debug Pedro
             if (this is Prey)
-                source = File.AppendText("test1.txt");
-            else
-                source = File.AppendText("test2.txt");
-            foreach (var s in a)
             {
-                source.Write(s+",");
+                Agent.lstEstimulusPrey.Add(a);
             }
-            source.WriteLine();
-            source.Close();
+            else
+            {
+                Agent.lstEstimulusPredator.Add(a);
+            }
+            if (state == States.Reagruping && identifier == "Gibran")
+            {
+                StreamWriter source = File.AppendText("test_prey.txt");
+                foreach (var s in lstEstimulusPrey)
+                {
+                    string str = s.Aggregate("", (current, t) => current + (t + ","));
+                    source.WriteLine(str);
+                }
+                source.WriteLine();
+                source.Close();
+
+
+                source = File.AppendText("test_predator.txt");
+                foreach (var s in lstEstimulusPredator)
+                {
+                    string str = s.Aggregate("", (current, t) => current + (t + ","));
+                    source.WriteLine(str);
+                }
+                source.WriteLine();
+                source.Close();
+                state = States.Searching;
+            }
+
+
+
+
+
+
+
             //result = nn.IsNeedTraining() ? nn.Training(a) : nn.Ejecution(a);
             /*var sb2 = new StringBuilder();
             sb2.Append("(");
@@ -115,12 +148,12 @@ namespace Assets.My_Assets
 				lstStimulus [1] = GetFearStimulus ();
 				lstStimulus [2] = GetLeaderShipStimulus ();
 				lstStimulus [3] = isLeader ? GetHungryStimulus () : 0;
-				lstStimulus [4] = isLeader ? GetMatingStimulus () : 0;
+				lstStimulus [4] = GetMatingStimulus ();
 			} else {
 				lstStimulus [0] = 1;
 				lstStimulus [1] = GetLeaderShipStimulus ();
 				lstStimulus [2] = isLeader ? GetHungryStimulus () : 0;
-				lstStimulus [3] = isLeader ? GetMatingStimulus () : 0;
+				lstStimulus [3] = GetMatingStimulus ();
 			}
 
             return lstStimulus;
@@ -136,10 +169,16 @@ namespace Assets.My_Assets
             List<Agent> lstCharm = GetHerd<Agent>();
 
             //Cuenta los lideres en la manada
-            var leaderCount = lstCharm.Count(x => x.isLeader && x.state != States.Die);
-                ///TODO:Poner rango de vision de la manada
-            //Debug.Log(leaderCount+" "+identifier);                
-            return leaderCount == 0 ? 1 : 0; 
+            var leaderCount = 0;
+            foreach (var x in lstCharm)
+            {
+                var ss = Vector3.Distance(transform.position, x.transform.position);
+                if (x.isLeader && x.state != States.Die && Vector3.Distance(transform.position, x.transform.position) <= 2 * comRange)
+                {
+                    leaderCount++;
+                }
+            }
+            return leaderCount == 1 ? 0 : 1; 
         }
 
         /// <summary>
@@ -325,10 +364,10 @@ namespace Assets.My_Assets
         protected List<T> GetHerd<T>() where T : Agent
         {
             var lstHerd = new List<T>();
-            if (!lstHerd.Contains((T) this))
+            /*if (!lstHerd.Contains((T) this))
             {
                 lstHerd.Add((T) this);
-            }
+            }*/
 
             foreach (var e in herd)
             {
