@@ -282,17 +282,19 @@ public class Predator : Agent
     #region Leader Stimulus
     private void behavior_select_leader()
     {
-        if (leader == null && state != States.ChoosingLeader) //TODO: CHECK
-        {
-            state = States.ChoosingLeader;
-            if (GetComponent<PreyLeaderChoosing>() == null)
+		List<Predator> herdList = new List<Predator>();
+		for( int j=0;j<herd.Count;j++){
+			herdList.Add(herd[j].GetComponent<Predator>());
+		}
+
+		this.getNewLeader(herdList);
+            /*if (GetComponent<PreyLeaderChoosing>() == null)
                 setLeader(gameObject);
             else
             {
                 GetComponent<PreyLeaderChoosing>().choose();
-            }
-        }
-    }
+            }*/
+   }
 
     /// <summary>
     /// Fijar el objeto lider

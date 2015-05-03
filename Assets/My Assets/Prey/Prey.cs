@@ -297,7 +297,18 @@ public class Prey : Agent
     #region Leader Stimulus
     private void behavior_select_leader()
     {
-		//Ke hacer aqui
+		
+		List<Prey> herdList = new List<Prey>();
+		for( int j=0;j<herd.Count;j++){
+			herdList.Add(herd[j].GetComponent<Prey>());
+		}
+		
+		this.getNewLeader(herdList);		/*if (GetComponent<PreyLeaderChoosing>() == null)
+                setLeader(gameObject);
+            else
+            {
+                GetComponent<PreyLeaderChoosing>().choose();
+            }*/
     }
 
 	/// <summary>

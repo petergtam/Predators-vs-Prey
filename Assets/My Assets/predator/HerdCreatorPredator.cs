@@ -18,12 +18,17 @@ namespace Assets.My_Assets
 	{
 		private int K;
 		private double EPS = 0.0001;
+		private float timeToGo;
+		private Predator[] elements;
 		public HerdCreatorPredator()
+		
 		{
+			timeToGo = 0.0F;
 			K = 3;
 		}
 		public HerdCreatorPredator( int k){
 			K = k;
+			timeToGo = 0.0F;
 		}
 		private float distance(Vector3 p1, Vector3 p2 ){
 			return (p1.x - p2.x) * (p1.x - p2.x)  
@@ -32,10 +37,73 @@ namespace Assets.My_Assets
 		void Start(){
 			Debug.Log("Creating Predator Herds");
 			this.createHerds();
+
 			Debug.Log ("Done Predator Herds");
 		}
+
+		private void fillHerd(Predator p, int herd,Dictionary<int,int> predatorVisited){
+			if (predatorVisited.ContainsKey(p.GetInstanceID()))
+				return;
+			predatorVisited.Add(p.GetInstanceID(),herd);
+
+			//Por cada objeto encontrado revisa si es un arbol y añada su cantidad de comida
+			for (int i = 0; i < elements.Length; i++) {
+				Predator vecino = elements[i];
+				if( distance( p.transform.position, vecino.transform.position ) <= p.comRange * p.comRange ){ 
+					fillHerd( vecino, herd, predatorVisited);
+				}
+			}
+		}
+
+
+ 		void Update(){
+			if (Time.fixedTime < timeToGo) {
+				return;
+			}
+			timeToGo = Time.fixedTime + 5.0F;
+			//Debug.Log ("Iniciando actualizacion de herds - Predator");
+			Dictionary<int,int> predatorVisited = new Dictionary<int, int> ();
+			elements = GameObject.FindObjectsOfType<Predator>();
+			int[] curCluster = new int[elements.Count()];
+			int nElements = elements.Length;
+			int nHerd = 0;
+			for (int i=0; i<nElements; i++) {
+				Predator curPredator = elements[i];
+				if( !predatorVisited.ContainsKey(curPredator.GetInstanceID())){
+					fillHerd(curPredator,nHerd++,predatorVisited);
+				}
+			}
+			//Debug.Log ("Flood Fill terminado");
+			nHerd++;
+			//Debug.Log ("Creando listas de herds");
+			List<List<Predator>> herds = new List<List<Predator>> ();
+			for (int i=0; i<nHerd; i++) {
+				herds.Add( new List<Predator>() );
+			}
+			for (int i=0; i<nElements; i++) {
+				int herdId = predatorVisited[elements[i].GetInstanceID()];
+				herds[herdId].Add(elements[i]); 
+				elements[i].herdid = herdId;
+			}
+			//Debug.Log ("Creadas listas de herds");
+			//Debug.Log ("Iniciando seleccion de lideres y asignacion de manadas");
+			for( int i=0;i<nHerd;i++){
+				if(herds[i].Count == 0 ) continue;
+				Predator element = herds[i][0];
+				List<GameObject> herdList = new List<GameObject>();
+				for( int j=0;j<herds[i].Count;j++){
+					herdList.Add(herds[i][j].gameObject);
+				}
+				for( int j=0;j<herds[i].Count;j++){
+					herds[i][j].herd = herdList;
+				}
+				//element.getNewLeader(herds[i]);
+			}
+			//Debug.Log ("Herds creadas y todo listo");
+		}
+
 		public void createHerds(){
-			Predator[] elements = GameObject.FindObjectsOfType<Predator>();
+			elements = GameObject.FindObjectsOfType<Predator>();
 			int nElements = elements.Count ();
 			int[] curCluster = new int[elements.Count()];
 			for (int i=0; i<nElements; i++) {
