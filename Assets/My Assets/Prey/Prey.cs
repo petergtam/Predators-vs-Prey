@@ -71,15 +71,6 @@ public class Prey : Agent
 
             case StimulusEnum.Fear:
                 behavior_fear();
-                /*if (isLeader == true)
-                {
-                    behavior_fear();
-                }
-                else
-                {
-                    //Comunicar al lider
-                    BroadCast("behavior_fear", null);
-                }*/
                 break;
 
             case StimulusEnum.Hungry:
@@ -237,9 +228,14 @@ public class Prey : Agent
     private void behavior_following()
     {
         nav.destination = leader.transform.position;
-        if (Vector3.Distance(transform.position, nav.destination) < 5f)
+        var distance = Vector3.Distance(transform.position, nav.destination);
+        if (distance < 15f)
         {
             nav.speed = nav.speed *.5f;
+            if (distance < 7f && (leader.GetComponent<Prey>().state == States.Hunting || leader.GetComponent<Prey>().state == States.Eating))
+            {
+                state = leader.GetComponent<Prey>().state;
+            }
         }
     }
 
@@ -356,7 +352,7 @@ public class Prey : Agent
     #region Fear Stimulus
     private void behavior_fear()
     {
-        if (state != States.Hiding)
+        if (state != States.Hiding || actualPredator == null)
         {
             Agent oPredator = GetColliders<Predator>(2.5f).First();
             var scalar = 4 * (transform.position - oPredator.transform.position);
@@ -377,7 +373,7 @@ public class Prey : Agent
             state = States.Hiding;
             isNeededRun = true;
         }
-        else if (Vector3.Distance(transform.position, actualPredator.transform.position) < 50f)
+        else if (Vector3.Distance(transform.position, actualPredator.transform.position) < 30f)
         {
             Agent oPredator = GetColliders<Predator>(2.5f).First();
             var scalar = 4 * (transform.position - oPredator.transform.position);

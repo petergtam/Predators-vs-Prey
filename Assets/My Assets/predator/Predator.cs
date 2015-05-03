@@ -127,12 +127,12 @@ public class Predator : Agent
         {
             Stop();
             state = States.Hunting;
-            order_hunt(gameObject);
+            //order_hunt(gameObject);
         }
         else if (IsThereFood(2.5f))
         {
             state = States.Hunting;
-            order_hunt(gameObject);
+            //order_hunt(gameObject);
         }
     }
 
@@ -192,10 +192,20 @@ public class Predator : Agent
     private void behavior_follower_following()
     {
         nav.destination = leader.transform.position;
+        var distance = Vector3.Distance(transform.position, nav.destination);
+        if (distance < 15f)
+        {
+            nav.speed = nav.speed * .5f;
+            if (distance < 7f && (leader.GetComponent<Predator>().state == States.Hunting || leader.GetComponent<Predator>().state == States.Eating))
+            {
+                state = leader.GetComponent<Predator>().state;
+            }
+        }
+
         if (IsThereFood(2.5f))
         {
             state = States.Hunting;
-            order_hunt(gameObject);
+            //order_hunt(gameObject);
         }
     }
 
@@ -417,15 +427,9 @@ public class Predator : Agent
     {
         if (state != States.Hunting && 0 < hp)
         {
-            if (IsMyLeader(l))
-            {
-                if (!IsMe(leader))
-                {
-                    state = States.Hunting;
-                    nav.destination = l.GetComponent<NavMeshAgent>().destination;
-                    order_hunt(l); //Reply the message to others
-                }
-            }
+            state = States.Hunting;
+            nav.destination = l.GetComponent<NavMeshAgent>().destination;
+            order_hunt(l); //Reply the message to others
         }
     }
     #endregion
