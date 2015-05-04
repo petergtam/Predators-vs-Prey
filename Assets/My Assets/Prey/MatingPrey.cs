@@ -31,15 +31,15 @@ public class MatingPrey: MonoBehaviour
             int count = 0;
            
 			//valida la cantidad de estamina y la edad necesarias para reproducirse.
-            foreach (var x in herdList)
+			for (int i=0; i< herdList.Count; i++)
             {
-                var stamina = herdList[count].stamina;
-                if (stamina < 50f || x.LifeState != DinoObject.LifeEnum.Adulto)
-                {
+				var stamina = herdList[i].stamina;
+				if (stamina < 50f || herdList[i].LifeState != DinoObject.LifeEnum.Adulto || (Time.time - herdList[i].LastMating <= 40 && herdList[i].LastMating > 0))
+				{
 					//elimina los elementos que no cumplen condición.
-                    herdList.Remove(herdList[count]);
+                    herdList.Remove(herdList[i]);
                 }
-                count++;
+              
 
             }
 			if(herdList.Count > 2)
@@ -53,6 +53,8 @@ public class MatingPrey: MonoBehaviour
 				Debug.Log("Entro");
 				ObtenerCarac();
 				Instantiate(Hijo,herdList[0].transform.position,Quaternion.identity);
+				herdList[0].LastMating = Time.time;
+				herdList[1].LastMating = Time.time;
 			}
         }
     }
@@ -70,10 +72,10 @@ public class MatingPrey: MonoBehaviour
 			Hijo.hp=hp;
 		}
 		if (caracateristicas [1] > 80) {
-			stamina=100;
+			stamina=Random.Range (80, 100);
 			Hijo.stamina=stamina;
 		} else {
-			stamina = Random.Range (60, 80);
+			stamina = Random.Range (50, 79);
 			Hijo.stamina=stamina;
 		}
 		if (caracateristicas [2] > 8) {
@@ -104,16 +106,21 @@ public class MatingPrey: MonoBehaviour
 			comRange = Random.Range (8, 9);
 			Hijo.comRange=comRange;
 		}
-		if (caracateristicas [6] > 10) {
-			maxLifeTime = Random.Range (10, 12);
+		if (caracateristicas [6] > 600) {
+			maxLifeTime = Random.Range(600, 720);
 			Hijo.maxLifeTime=maxLifeTime;
 		} else {
-			attack = Random.Range (8, 9);
+			maxLifeTime = Random.Range (540, 599);
 			Hijo.maxLifeTime=maxLifeTime;
 		}
-		Hijo.defense=(Random.Range(0,5));
+		Hijo.defense = (Random.Range(0, 5));
 		Hijo.lifetime = 0;
-		Hijo.isLeader=false;
+		Hijo.isLeader = false;
+		Hijo.state = DinoObject.States.Following;
+		//Fija los parametros iniciales en torno a la escala
+		Hijo.comRange = (int)(comRange * ((float)transform.localScale.x / 0.3));
+		Hijo.LastMating = 0;
+
 
 
 	}
@@ -128,7 +135,7 @@ public class MatingPrey: MonoBehaviour
 		padre.Add(herdList[0].flesh > 500 ? 1 : 0);//300-800
 		padre.Add(herdList[0].attack > 10 ? 1 : 0);//6-16
 		padre.Add(herdList[0].comRange > 10 ? 1 : 0);//8-12
-		padre.Add(herdList[0].maxLifeTime > 400 ? 1 : 0);//540-720
+		padre.Add(herdList[0].maxLifeTime > 600 ? 1 : 0);//540-720
 
         return padre;
     }
@@ -143,7 +150,7 @@ public class MatingPrey: MonoBehaviour
 		madre.Add(herdList[1].flesh > 500 ? 1 : 0);
 		madre.Add(herdList[1].attack > 10 ? 1 : 0);
 		madre.Add(herdList[1].comRange > 10 ? 1 : 0);
-		madre.Add(herdList[1].maxLifeTime > 10 ? 1 : 0);
+		madre.Add(herdList[1].maxLifeTime > 600 ? 1 : 0);
 
         return madre;
     }

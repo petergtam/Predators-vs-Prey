@@ -26,29 +26,26 @@ public class Prey : Agent
 
     void Awake()
     {
-        InitValue();
+		if (string.IsNullOrEmpty(identifier) == true)
+		{
+			state = States.ChoosingLeader;
+			InitValue();
+			
+			identifier = Prey.names[indice % 16];
+			indice++;
+			
+			textMesh = (TextMesh) gameObject.AddComponent("TextMesh");
+			var f = (Font) Resources.LoadAssetAtPath("Assets/My Assets/Fonts/coolvetica.ttf", typeof (Font));
+			textMesh.font = f;
+			textMesh.renderer.sharedMaterial = f.material;
+			textMesh.text = identifier;
+		}
+		
+		if (nav == null)
+		{
+			nav = GetComponent<NavMeshAgent>();
+		}
 
-        state = States.ChoosingLeader;
-
-        //Si no cuenta con eleccion de lider, el es el lider
-        /*if (GetComponent<LeaderSelectorPrey>() == null)
-            setLeader(gameObject);
-        else
-        {
-            GetComponent<LeaderSelectorPrey>().;
-        }*/
-		//setLeader(gameObject);
-        identifier = Prey.names[indice];
-		//setLeader (gameObject);
-
-        indice++;
-
-        textMesh = (TextMesh) gameObject.AddComponent("TextMesh");
-        var f = (Font) Resources.LoadAssetAtPath("Assets/My Assets/Fonts/coolvetica.ttf", typeof (Font));
-        textMesh.font = f;
-        textMesh.renderer.sharedMaterial = f.material;
-        textMesh.text = identifier;
-		//getNewLeader();
         if (identifier == "Pedro")
         {
             nn = new NeuralNetwork(this);
@@ -78,10 +75,9 @@ public class Prey : Agent
                 break;
 
             case StimulusEnum.Mating:
-                if (isLeader == true)
-                {
+                if(isLeader)
                     behavior_mating();
-                }
+               
                 break;
         }
 
@@ -231,7 +227,7 @@ public class Prey : Agent
         var distance = Vector3.Distance(transform.position, nav.destination);
         if (distance < 15f)
         {
-            nav.speed = nav.speed *.8f;
+            nav.speed = nav.speed *.7f;
             if (distance < 7f && (leader.GetComponent<Prey>().state == States.Hunting || leader.GetComponent<Prey>().state == States.Eating))
             {
                 state = leader.GetComponent<Prey>().state;
@@ -383,12 +379,9 @@ public class Prey : Agent
     #region Mating Stimulus
     private void behavior_mating()
     {
-        //Find couple
-
-        //Procreate
-
-        //Born a new child
-        throw new NotImplementedException();
+		if (gameObject.GetComponent<MatingPrey> () != null) {
+			gameObject.GetComponent<MatingPrey> ().Procreate (herd);
+		}
     }
     #endregion
 
