@@ -195,7 +195,7 @@ public class Predator : Agent
         var distance = Vector3.Distance(transform.position, nav.destination);
         if (distance < 15f)
         {
-            nav.speed = nav.speed * .5f;
+            nav.speed = nav.speed * .8f;
             if (distance < 7f && (leader.GetComponent<Predator>().state == States.Hunting || leader.GetComponent<Predator>().state == States.Eating))
             {
                 state = leader.GetComponent<Predator>().state;
@@ -337,7 +337,7 @@ public class Predator : Agent
         else
         {
             isLeader = false;
-            state = States.Waiting;
+            state = States.Following;
         }
     }
     #endregion
@@ -350,7 +350,6 @@ public class Predator : Agent
         //Procreate
 
         //Born a new child
-        throw new NotImplementedException();
     }
     #endregion
 

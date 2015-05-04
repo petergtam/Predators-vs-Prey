@@ -102,9 +102,31 @@ namespace Assets.My_Assets
             }
             sb.Append(")");
             Debug.Log("Output (" + identifier + "):" + sb);*/
-            if (this is Prey && a[1] > 0)
+            if (this is Prey)
             {
-                return StimulusEnum.Fear;
+                if (a[1] > 0)
+                {
+                    return StimulusEnum.Fear;
+                }
+                else if(a[2] > 0)
+                {
+                    return StimulusEnum.LeaderShip;
+                }
+                /*else if (a[4] > 0)
+                {
+                    return StimulusEnum.Mating;
+                }*/
+            }
+            if (this is Predator)
+            {
+                if (a[1] > 0)
+                {
+                    return StimulusEnum.LeaderShip;
+                }
+                /*else if (a[3] > 0)
+                {
+                    return StimulusEnum.Mating;
+                }*/
             }
             return StimulusEnum.Hungry;
             if (result == null) return StimulusEnum.Hungry;
@@ -172,8 +194,7 @@ namespace Assets.My_Assets
             var leaderCount = 0;
             foreach (var x in lstCharm)
             {
-                var ss = Vector3.Distance(transform.position, x.transform.position);
-                if (x.isLeader && x.state != States.Die && Vector3.Distance(transform.position, x.transform.position) <= 2 * comRange)
+                if (x.isLeader && x.state != States.Die && Vector3.Distance(transform.position, x.transform.position) <= 50f)
                 {
                     leaderCount++;
                 }

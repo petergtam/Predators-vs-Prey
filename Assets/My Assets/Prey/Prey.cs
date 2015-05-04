@@ -231,7 +231,7 @@ public class Prey : Agent
         var distance = Vector3.Distance(transform.position, nav.destination);
         if (distance < 15f)
         {
-            nav.speed = nav.speed *.5f;
+            nav.speed = nav.speed *.8f;
             if (distance < 7f && (leader.GetComponent<Prey>().state == States.Hunting || leader.GetComponent<Prey>().state == States.Eating))
             {
                 state = leader.GetComponent<Prey>().state;
@@ -293,13 +293,10 @@ public class Prey : Agent
     #region Leader Stimulus
     private void behavior_select_leader()
     {
-		
-		List<Prey> herdList = new List<Prey>();
-		for( int j=0;j<herd.Count;j++){
-			herdList.Add(herd[j].GetComponent<Prey>());
-		}
-		
-		this.getNewLeader(herdList);		/*if (GetComponent<PreyLeaderChoosing>() == null)
+		Debug.Log("Get new leader");
+		List<Prey> herdList = herd.Select(t => t.GetComponent<Prey>()).ToList();
+        this.getNewLeader(herdList);		
+        /*if (GetComponent<PreyLeaderChoosing>() == null)
                 setLeader(gameObject);
             else
             {
@@ -334,7 +331,7 @@ public class Prey : Agent
 			state = States.Searching;
 		} else {
 			leader = l;
-			state = States.Waiting;
+			state = States.Following;
 		}
 		/*if (IsMyLeader(gameObject))
         {
