@@ -345,11 +345,7 @@ public class Predator : Agent
     #region Mating Stimulus
     private void behavior_mating()
     {
-        //Find couple
-
-        //Procreate
-
-        //Born a new child
+        gameObject.GetComponent<MatingPredator>().Procreate(herd);
     }
     #endregion
 
