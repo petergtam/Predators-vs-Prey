@@ -28,16 +28,16 @@ public class MatingPredator : MonoBehaviour
             int count = 0;
 
             //valida la cantidad de estamina y la edad necesarias para reproducirse.
-            foreach (var x in herdList)
+            for (int index = 0; index < herdList.Count; index++)
             {
+                var x = herdList[index];
                 var stamina = herdList[count].stamina;
-                if (stamina < 50f || x.LifeState != DinoObject.LifeEnum.Adulto)
+                if (stamina < 50f || x.LifeState != DinoObject.LifeEnum.Adulto || (Time.time - x.LastMating <= 40 && x.LastMating > 0))
                 {
                     //elimina los elementos que no cumplen condición.
                     herdList.Remove(herdList[count]);
                 }
                 count++;
-
             }
             if (herdList.Count > 2)
             {
@@ -50,6 +50,8 @@ public class MatingPredator : MonoBehaviour
                 Debug.Log("Entro");
                 ObtenerCarac();
                 Instantiate(Hijo, herdList[0].transform.position, Quaternion.identity);
+                herdList[0].LastMating = Time.time;
+                herdList[1].LastMating = Time.time;
             }
         }
     }
@@ -121,21 +123,23 @@ public class MatingPredator : MonoBehaviour
             comRange = Random.Range(8, 9);
             Hijo.comRange = comRange;
         }
-        if (caracateristicas[6] > 10)
+        if (caracateristicas[6] > 650)
         {
-            maxLifeTime = Random.Range(10, 12);
+            maxLifeTime = Random.Range(540, 720);
             Hijo.maxLifeTime = maxLifeTime;
         }
         else
         {
-            attack = Random.Range(8, 9);
+            maxLifeTime = Random.Range(540, 720);
             Hijo.maxLifeTime = maxLifeTime;
         }
         Hijo.defense = (Random.Range(0, 5));
         Hijo.lifetime = 0;
         Hijo.isLeader = false;
-
-
+        Hijo.state = DinoObject.States.Following;
+        //Fija los parametros iniciales en torno a la escala
+        Hijo.comRange = (int)(comRange * ((float)transform.localScale.x / 0.3));
+        Hijo.LastMating = 0;
     }
 
     // obtiene el cromosoma segun las caracteristicas, si tiene un buen porcentaje-->1 sino ---->0.
@@ -148,7 +152,7 @@ public class MatingPredator : MonoBehaviour
         padre.Add(herdList[0].flesh > 500 ? 1 : 0); //300-800
         padre.Add(herdList[0].attack > 10 ? 1 : 0); //6-16
         padre.Add(herdList[0].comRange > 10 ? 1 : 0); //8-12
-        padre.Add(herdList[0].maxLifeTime > 400 ? 1 : 0); //540-720
+        padre.Add(herdList[0].maxLifeTime > 650 ? 1 : 0); //540-720
 
         return padre;
     }
@@ -163,7 +167,7 @@ public class MatingPredator : MonoBehaviour
         madre.Add(herdList[1].flesh > 500 ? 1 : 0);
         madre.Add(herdList[1].attack > 10 ? 1 : 0);
         madre.Add(herdList[1].comRange > 10 ? 1 : 0);
-        madre.Add(herdList[1].maxLifeTime > 10 ? 1 : 0);
+        madre.Add(herdList[1].maxLifeTime > 650 ? 1 : 0);
 
         return madre;
     }
