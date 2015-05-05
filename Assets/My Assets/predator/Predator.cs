@@ -15,21 +15,27 @@ public class Predator : Agent
 	public int herdid;
     void Awake()
     {
-        InitValue();
+        if (string.IsNullOrEmpty(identifier) == true)
+        {
+            state = States.ChoosingLeader;
+            InitValue();
 
-        state = States.ChoosingLeader;
+            identifier = Predator.names[indice % 7];
+            indice++;
 
-        identifier = Predator.names[indice];
-        indice++;
+            textMesh = (TextMesh) gameObject.AddComponent("TextMesh");
+            var f = (Font) Resources.LoadAssetAtPath("Assets/My Assets/Fonts/coolvetica.ttf", typeof (Font));
+            textMesh.font = f;
+            textMesh.renderer.sharedMaterial = f.material;
+            textMesh.text = identifier;
+        }
 
-        textMesh = (TextMesh) gameObject.AddComponent("TextMesh");
-        var f = (Font) Resources.LoadAssetAtPath("Assets/My Assets/Fonts/coolvetica.ttf", typeof (Font));
-        textMesh.font = f;
-        textMesh.renderer.sharedMaterial = f.material;
-        textMesh.text = identifier;
+        if (nav == null)
+        {
+            nav = GetComponent<NavMeshAgent>();
+        }
 
-		nn = new NeuralNetwork (this);
-
+        nn = new NeuralNetwork (this);
     }
 
     private void Update()
@@ -195,7 +201,7 @@ public class Predator : Agent
         var distance = Vector3.Distance(transform.position, nav.destination);
         if (distance < 15f)
         {
-            nav.speed = nav.speed * .8f;
+            nav.speed = nav.speed * .7f;
             if (distance < 7f && (leader.GetComponent<Predator>().state == States.Hunting || leader.GetComponent<Predator>().state == States.Eating))
             {
                 state = leader.GetComponent<Predator>().state;
@@ -345,11 +351,7 @@ public class Predator : Agent
     #region Mating Stimulus
     private void behavior_mating()
     {
-        //Find couple
-
-        //Procreate
-
-        //Born a new child
+        gameObject.GetComponent<MatingPredator>().Procreate(herd);
     }
     #endregion
 

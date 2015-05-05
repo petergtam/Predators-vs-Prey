@@ -24,6 +24,8 @@ namespace Assets.My_Assets
         /// </summary>
         public GameObject actualPredator;
 
+        public float LastMating = 0;
+
         #region Estimulos
 
         private static List<double[]> lstEstimulusPrey = new List<double[]>();
@@ -123,10 +125,10 @@ namespace Assets.My_Assets
                 {
                     return StimulusEnum.LeaderShip;
                 }
-                /*else if (a[3] > 0)
+                else if (a[3] > 0)
                 {
                     return StimulusEnum.Mating;
-                }*/
+                }
             }
             return StimulusEnum.Hungry;
             if (result == null) return StimulusEnum.Hungry;
@@ -247,8 +249,16 @@ namespace Assets.My_Assets
             List<Agent> lstCharm = GetHerd<Agent>();
 
             //Se obtiene la razon de los agentes que estan en edad de procrear entre el total de la manada
-            double matingIndicator = (double) lstCharm.Count(x => x.LifeState == LifeEnum.Adulto)/lstCharm.Count;
-			if (matingIndicator > .5)
+            int count = 0;
+            foreach (var x in lstCharm)
+            {
+                if (x.LifeState == LifeEnum.Adulto && (Time.time - x.LastMating > 40 || x.LastMating <=0))
+                {
+                    count++;
+                }
+            }
+            double matingIndicator = (double) count/lstCharm.Count;
+			if (matingIndicator > .4)
 				return 1;
             return 0;
         }
