@@ -110,7 +110,7 @@ namespace Assets.My_Assets
                 {
                     return StimulusEnum.LeaderShip;
                 }
-                else if (a[4] > 0)
+                else if (a[4] >= 0.4)
                 {
                     return StimulusEnum.Mating;
                 }
@@ -121,7 +121,7 @@ namespace Assets.My_Assets
                 {
                     return StimulusEnum.LeaderShip;
                 }
-                else if (a[3] > 0)
+                else if (a[3] >= 0.4)
                 {
                     return StimulusEnum.Mating;
                 }
