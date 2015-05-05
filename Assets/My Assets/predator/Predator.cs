@@ -201,8 +201,8 @@ public class Predator : Agent
         var distance = Vector3.Distance(transform.position, nav.destination);
         if (distance < 15f)
         {
-            nav.speed = nav.speed * .7f;
-            if (distance < 7f && (leader.GetComponent<Predator>().state == States.Hunting || leader.GetComponent<Predator>().state == States.Eating))
+            nav.speed = nav.speed * .5f;
+            if (distance < 10f && (leader.GetComponent<Predator>().state == States.Hunting || leader.GetComponent<Predator>().state == States.Eating))
             {
                 state = leader.GetComponent<Predator>().state;
             }
