@@ -1,13 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Text;
-using UnityEditor;
-using UnityEngine;
-using Debug = UnityEngine.Debug;
-using Random = System.Random;
 using Assets.My_Assets;
 
 public class NeuralNetwork
@@ -101,28 +92,26 @@ public class NeuralNetwork
 
 	double[] GetDesired (double[] input)
 	{
-		if (agent is Prey) {
-			if (input [1].Equals (1)) {
+		if (agent is Prey)
+		{
+		    if (input [1].Equals (1)) {
 				return new double[]{1,0,0,0};
-			} else if (input [2].Equals (1)) {
-				return new double[] {0, 1, 0, 0};
-			} else if (input [3].Equals (1)) {
-				return new double[]{0,0,1,0};
-			} else if (input [4].Equals (1)) {
-				return new double[] {0, 0, 0, 1};
-			} else
-				return new double[] {0, 0, 0, 0};
-		} else {
-			if (input [1].Equals (1)) {
-				return new double[]{1,0,0};
-			} else if (input [2].Equals (1)) {
-				return new double[] {0, 1, 0};
-			} else if (input [3].Equals (1)) {
-				return new double[]{0,0,1};
-			} else
-				return new double[] {0, 0, 0};
+			}
+		    if (input [2].Equals (1)) {
+		        return new double[] {0, 1, 0, 0};
+		    }
+		    if (input [3].Equals (1)) {
+		        return new double[]{0,0,1,0};
+		    }
+		    return input [4].Equals (1) ? new double[] {0, 0, 0, 1} : new double[] {0, 0, 0, 0};
 		}
-	    return null;
+	    if (input [1].Equals (1)) {
+	        return new double[]{1,0,0};
+	    }
+	    if (input [2].Equals (1)) {
+	        return new double[] {0, 1, 0};
+	    }
+	    return input [3].Equals (1) ? new double[]{0,0,1} : new double[] {0, 0, 0};
 	}
 
 	double[] yVector(double[,] weight,double[] input){

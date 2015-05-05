@@ -48,12 +48,12 @@ namespace Assets.My_Assets
             {
                 Agent.lstEstimulusPredator.Add(a);
             }
-            if (state == States.Reagruping && identifier == "Gibran")
+            if (state == States.Reagruping && identifier == "Pedro")
             {
                 StreamWriter source = File.AppendText("test_prey.txt");
                 foreach (var s in lstEstimulusPrey)
                 {
-                    string str = s.Aggregate("", (current, t) => current + (t + ","));
+                    string str = s.Aggregate("", (current, t) => current + (Math.Round(t,4) + ","));
                     source.WriteLine(str);
                 }
                 source.WriteLine();
@@ -63,7 +63,7 @@ namespace Assets.My_Assets
                 source = File.AppendText("test_predator.txt");
                 foreach (var s in lstEstimulusPredator)
                 {
-                    string str = s.Aggregate("", (current, t) => current + (t + ","));
+                    string str = s.Aggregate("", (current, t) => current + (Math.Round(t, 4) + ","));
                     source.WriteLine(str);
                 }
                 source.WriteLine();
@@ -165,15 +165,17 @@ namespace Assets.My_Assets
         /// <returns>Retorna un arreglo con los estimulos del agente. Miedo, Liderazgo, Hambre y Apareamiento.</returns>
         protected double[] GetStimulus()
         {
-            double[] lstStimulus = new double[5];
+            double[] lstStimulus;
 
 			if (this is Prey) {
+                lstStimulus = new double[5];
 				lstStimulus [0] = 1;
 				lstStimulus [1] = GetFearStimulus ();
 				lstStimulus [2] = GetLeaderShipStimulus ();
 				lstStimulus [3] = isLeader ? GetHungryStimulus () : 0;
 				lstStimulus [4] = GetMatingStimulus ();
 			} else {
+                lstStimulus = new double[4];
 				lstStimulus [0] = 1;
 				lstStimulus [1] = GetLeaderShipStimulus ();
 				lstStimulus [2] = isLeader ? GetHungryStimulus () : 0;
@@ -258,9 +260,7 @@ namespace Assets.My_Assets
                 }
             }
             double matingIndicator = (double) count/lstCharm.Count;
-			if (matingIndicator > .4)
-				return 1;
-            return 0;
+			return matingIndicator;
         }
 
         #endregion
