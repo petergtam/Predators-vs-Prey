@@ -32,11 +32,7 @@ namespace Assets.My_Assets
         private static List<double[]> lstEstimulusPredator = new List<double[]>(); 
         public StimulusEnum SelectStimulu(NeuralNetwork nn)
         {
-            //if (this.identifier != "Pedro") return StimulusEnum.Rest;
             var a = GetStimulus();
-            double[] result = null;
-            
-            
 
 
             //TODO: Debug Pedro
@@ -110,14 +106,14 @@ namespace Assets.My_Assets
                 {
                     return StimulusEnum.Fear;
                 }
-                else if(a[2] > 0)
+                else if (a[2] > 0)
                 {
                     return StimulusEnum.LeaderShip;
                 }
-                /*else if (a[4] > 0)
+                else if (a[4] > 0)
                 {
                     return StimulusEnum.Mating;
-                }*/
+                }
             }
             if (this is Predator)
             {
@@ -131,32 +127,6 @@ namespace Assets.My_Assets
                 }
             }
             return StimulusEnum.Hungry;
-            if (result == null) return StimulusEnum.Hungry;
-            if(this is Prey)
-            {
-                if (Math.Abs(1 - result[0]) < 0.05)
-                {
-                    return StimulusEnum.Fear;
-                }
-                if (Math.Abs(1 - result[1]) < 0.05)
-                {
-                    return StimulusEnum.LeaderShip;
-                }
-                if (Math.Abs(1 - result[2]) < 0.05)
-                {
-                    return StimulusEnum.Hungry;
-                }
-                return Math.Abs(1 - result[0]) < 0.04 ? StimulusEnum.Mating : StimulusEnum.Hungry;
-            }
-            if (Math.Abs(1 - result[0]) < 0.05)
-            {
-                return StimulusEnum.LeaderShip;
-            }
-            if (Math.Abs(1 - result[1]) < 0.05)
-            {
-                return StimulusEnum.Hungry;
-            }
-            return Math.Abs(1 - result[2]) < 0.05 ? StimulusEnum.Mating : StimulusEnum.Hungry;
         }
 
         /// <summary>

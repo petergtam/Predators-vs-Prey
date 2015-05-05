@@ -47,7 +47,10 @@ public class MatingPredator : MonoBehaviour
                     int random = Random.Range(0, herdList.Count);
                     herdList.Remove(herdList[random]);
                 }
-                Debug.Log("Entro");
+                if (Hijo == null)
+                {
+                    Hijo = herdList[0];
+                }
                 ObtenerCarac();
                 Instantiate(Hijo, herdList[0].transform.position, Quaternion.identity);
                 herdList[0].LastMating = Time.time;

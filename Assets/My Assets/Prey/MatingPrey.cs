@@ -50,7 +50,10 @@ public class MatingPrey: MonoBehaviour
 					int random= Random.Range(0,herdList.Count);
 	                herdList.Remove(herdList[random]);
 	            }
-				Debug.Log("Entro");
+                if (Hijo == null)
+                {
+                    Hijo = herdList[0];
+                }
 				ObtenerCarac();
 				Instantiate(Hijo,herdList[0].transform.position,Quaternion.identity);
 				herdList[0].LastMating = Time.time;
@@ -120,9 +123,6 @@ public class MatingPrey: MonoBehaviour
 		//Fija los parametros iniciales en torno a la escala
 		Hijo.comRange = (int)(comRange * ((float)transform.localScale.x / 0.3));
 		Hijo.LastMating = 0;
-
-
-
 	}
 
     // obtiene el cromosoma segun las caracteristicas, si tiene un buen porcentaje-->1 sino ---->0.
