@@ -32,92 +32,22 @@ namespace Assets.My_Assets
         private static List<double[]> lstEstimulusPredator = new List<double[]>(); 
         public StimulusEnum SelectStimulu(NeuralNetwork nn)
         {
-            //if (this.identifier != "Pedro") return StimulusEnum.Rest;
             var a = GetStimulus();
-            double[] result = null;
-            
-            
 
-
-            //TODO: Debug Pedro
-            if (this is Prey)
-            {
-                Agent.lstEstimulusPrey.Add(a);
-            }
-            else
-            {
-                Agent.lstEstimulusPredator.Add(a);
-            }
-            if (state == States.Reagruping && identifier == "Gibran")
-            {
-                StreamWriter source = File.AppendText("test_prey.txt");
-                foreach (var s in lstEstimulusPrey)
-                {
-                    string str = s.Aggregate("", (current, t) => current + (t + ","));
-                    source.WriteLine(str);
-                }
-                source.WriteLine();
-                source.Close();
-
-
-                source = File.AppendText("test_predator.txt");
-                foreach (var s in lstEstimulusPredator)
-                {
-                    string str = s.Aggregate("", (current, t) => current + (t + ","));
-                    source.WriteLine(str);
-                }
-                source.WriteLine();
-                source.Close();
-                state = States.Searching;
-            }
-
-
-
-
-
-
-
-            //result = nn.IsNeedTraining() ? nn.Training(a) : nn.Ejecution(a);
-            /*var sb2 = new StringBuilder();
-            sb2.Append("(");
-            if (result != null)
-            {
-                var count = this is Prey?0:1;
-                foreach (var d in result)
-                {
-                    sb2.Append(d + " ");
-                    if (Math.Abs(1-d)<0.04)
-                    {
-                        sb2.Append(Enum.GetName(typeof(StimulusEnum), count));
-                    }
-                    sb2.Append(",");
-                    count++;
-                }
-            }
-            sb2.Append(")\n");
-            Debug.Log("Output (" + identifier + "):" + sb2);*/
-            /*var sb = new StringBuilder();
-            sb.Append("(");
-            foreach (var d in a)
-            {
-                sb.Append(d + ",");
-            }
-            sb.Append(")");
-            Debug.Log("Output (" + identifier + "):" + sb);*/
             if (this is Prey)
             {
                 if (a[1] > 0)
                 {
                     return StimulusEnum.Fear;
                 }
-                else if(a[2] > 0)
+                else if (a[2] > 0)
                 {
                     return StimulusEnum.LeaderShip;
                 }
-                /*else if (a[4] > 0)
+                else if (a[4] > 0)
                 {
                     return StimulusEnum.Mating;
-                }*/
+                }
             }
             if (this is Predator)
             {
@@ -131,32 +61,6 @@ namespace Assets.My_Assets
                 }
             }
             return StimulusEnum.Hungry;
-            if (result == null) return StimulusEnum.Hungry;
-            if(this is Prey)
-            {
-                if (Math.Abs(1 - result[0]) < 0.05)
-                {
-                    return StimulusEnum.Fear;
-                }
-                if (Math.Abs(1 - result[1]) < 0.05)
-                {
-                    return StimulusEnum.LeaderShip;
-                }
-                if (Math.Abs(1 - result[2]) < 0.05)
-                {
-                    return StimulusEnum.Hungry;
-                }
-                return Math.Abs(1 - result[0]) < 0.04 ? StimulusEnum.Mating : StimulusEnum.Hungry;
-            }
-            if (Math.Abs(1 - result[0]) < 0.05)
-            {
-                return StimulusEnum.LeaderShip;
-            }
-            if (Math.Abs(1 - result[1]) < 0.05)
-            {
-                return StimulusEnum.Hungry;
-            }
-            return Math.Abs(1 - result[2]) < 0.05 ? StimulusEnum.Mating : StimulusEnum.Hungry;
         }
 
         /// <summary>

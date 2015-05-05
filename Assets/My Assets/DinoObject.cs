@@ -141,6 +141,8 @@ namespace Assets.My_Assets
 
             if (state == States.Die)
             {
+                Stop();
+                nav.speed = 0;
                 flesh -= Time.deltaTime * (5); //Putrefaccion
                 if (flesh <= 0)
                     Destroy(gameObject);
@@ -247,17 +249,17 @@ namespace Assets.My_Assets
             {
                 if (isNeededRun)
                 {
-                    if (GetType() == typeof(Prey))
+                    if (GetType() == typeof (Prey))
                     {
-                        return (float)(speed * ((stamina < 50 ? 50 : stamina) / 100.0));
+                        return (float) (speed*((stamina < 50 ? 50 : stamina)/100.0));
                     }
                     else
                     {
-                        return (float)((speed/1.5) * ((stamina < 50 ? 50 : stamina) / 100.0));
+                        return (float) ((speed/1.5)*((stamina < 50 ? 50 : stamina)/100.0));
                     }
                 }
             }
-            return (float)((speed / 3.0) * ((stamina < 50 ? 50 : stamina) / 100.0));
+            return (float) ((speed/3.0)*((stamina < 50 ? 50 : stamina)/100.0));
         }
 
         /// <summary>

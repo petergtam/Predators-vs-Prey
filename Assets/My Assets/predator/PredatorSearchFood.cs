@@ -128,7 +128,6 @@ public class PredatorSearchFood : Search
         List<Edge> lstDatosActuales = lstDatosVecinos.Where(x => Time.time - x.Storage[3] < maxTime).ToList();
 
         //Nodo a evualuar
-        int numPlants = node.GetComponent<PathNode>().getPlants();
         int numPrays = node.name == actualNode.name ? 0 : node.GetComponent<PathNode>().getPrays();
         int numPredator = node.GetComponent<PathNode>().getPredators();
 

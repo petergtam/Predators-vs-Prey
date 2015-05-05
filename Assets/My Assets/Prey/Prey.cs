@@ -289,9 +289,8 @@ public class Prey : Agent
     #region Leader Stimulus
     private void behavior_select_leader()
     {
-		Debug.Log("Get new leader");
 		List<Prey> herdList = herd.Select(t => t.GetComponent<Prey>()).ToList();
-        this.getNewLeader(herdList);		
+        getNewLeader(herdList);		
         /*if (GetComponent<PreyLeaderChoosing>() == null)
                 setLeader(gameObject);
             else
